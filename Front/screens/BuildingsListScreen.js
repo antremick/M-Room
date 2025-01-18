@@ -1,20 +1,17 @@
 // File: screens/BuildingsListScreen.js
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
+import { View, FlatList, StyleSheet } from "react-native";
+import { ActivityIndicator, Searchbar, List } from "react-native-paper";
+import Fuse from "fuse.js";
 
 // Replace with the URL to your Flask endpoint for building data
 const BUILDINGS_URL = "http://127.0.0.1:5000/buildings";
-// Or maybe something like 'https://myserver.com/buildings'
 
 export default function BuildingsListScreen({ navigation }) {
   const [buildings, setBuildings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
+  const [fuse, setFuse] = useState(null);
 
   useEffect(() => {
     fetchBuildings();
@@ -22,15 +19,32 @@ export default function BuildingsListScreen({ navigation }) {
 
   async function fetchBuildings() {
     try {
-      let response = await fetch(BUILDINGS_URL);
-      let json = await response.json();
-      setBuildings(json); // We assume your API returns a list of buildings
+      const response = await fetch(BUILDINGS_URL);
+      const json = await response.json();
+      setBuildings(json);
+
+      // Initialize Fuse.js once we have our building data
+      const fuseInstance = new Fuse(json, {
+        keys: ["name"],
+        threshold: 0.3,
+        minMatchCharLength: 2,
+      });
+      setFuse(fuseInstance);
     } catch (error) {
       console.error("Error fetching buildings:", error);
     } finally {
       setLoading(false);
     }
   }
+
+  // If there's no fuse instance or no search text, just show all buildings
+  const displayedBuildings = (() => {
+    if (!fuse || !searchText) return buildings;
+    // Perform a fuzzy search
+    const results = fuse.search(searchText.trim());
+    // Extract the building items from Fuse results
+    return results.map((r) => r.item);
+  })();
 
   function onBuildingPress(building) {
     // Navigate to RoomsListScreen and pass building info
@@ -39,25 +53,57 @@ export default function BuildingsListScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" color="#0000ff" />
+      <View style={styles.loadingContainer}>
+        {/* Paper's ActivityIndicator for a Material look */}
+        <ActivityIndicator animating={true} size="large" />
       </View>
     );
   }
 
   return (
-    <FlatList
-      data={buildings}
-      keyExtractor={(item) => item.id.toString()}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          onPress={() => onBuildingPress(item)}
-          style={{ padding: 20, borderBottomWidth: 1, borderColor: "#ccc" }}
-        >
-          <Text style={{ fontSize: 16 }}>{item.name}</Text>
-        </TouchableOpacity>
-      )}
-    />
+    <View style={styles.container}>
+      {/* Paper's Searchbar instead of a regular TextInput */}
+      <Searchbar
+        placeholder="Search buildings..."
+        onChangeText={setSearchText}
+        value={searchText}
+        style={styles.searchbar}
+      />
+
+      <FlatList
+        data={displayedBuildings}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <List.Item
+            title={item.name}
+            // Optional: subtitle or description
+            description="Tap to see rooms"
+            onPress={() => onBuildingPress(item)}
+            // Add left icon if you want
+            left={(props) => <List.Icon {...props} icon="office-building" />}
+          />
+        )}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
+    </View>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchbar: {
+    margin: 10,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: "#ccc",
+    marginLeft: 72, // space for left icon
+  },
+});
