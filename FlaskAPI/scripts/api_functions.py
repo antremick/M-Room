@@ -77,7 +77,6 @@ def get_data_from_endpoint(endpoint, room_id, auth_header, params):
     response = requests.get(f"{BASE_URL}{endpoint}", headers=auth_header, params=params) 
     # Check if the response is successful
     if response.status_code == 200:
-        print(f"Call to {endpoint} successful")
         try:
             data = response.json()  # Parse JSON response
             return data.get("Classrooms", {}).get("Classroom", [])
@@ -104,3 +103,20 @@ def with_keys(my_dict, keep):
     for unwanted_key in unwanted:
         del my_dict[unwanted_key]
     return my_dict
+
+def push_to_api(url, payload):
+        """Send JSON payload to API specified at URL"""
+        try:
+            # Post the data as JSON (directly pass the dictionary, no need for json.dumps)
+            response = requests.post(url, json=payload)
+            
+            # Check if the request was successful
+            if response.status_code == 200 or response.status_code == 201:
+                print("Push request sent successfully!")
+                # Print response if needed
+                print("Response:", response.json())
+            else:
+                print(f"Error: Received status code {response.status_code}")
+                print("Details:", response.text)
+        except requests.exceptions.RequestException as e:
+            print("Request failed:", e)

@@ -30,8 +30,9 @@ endpoints = [
 classrooms = api_functions.get_classroom(publicKey, privateKey)
 ROSS_CODE = 'ROSS BUS'
 BLAU_CODE = 'BLAU HALL'
+with open('classrooms.json', 'w') as json_file:
+    json.dump(classrooms, json_file)
 
-# pprint(classrooms)
 
 # classroomID = classrooms[0]["FacilityID"]
 # for endpoint in endpoints[1:]:
@@ -53,7 +54,7 @@ def with_keys(my_dict, keep):
 blau_rooms = [without_keys(room, ["BuildingID", "CampusCd", "CampusDescr"]) for room in classrooms if room["BldDescrShort"] == BLAU_CODE]
 ross_rooms = [without_keys(room, ["BuildingID", "CampusCd", "CampusDescr"])  for room in classrooms if room["BldDescrShort"] == ROSS_CODE]
 
-pprint(blau_rooms)
+pprint(ross_rooms)
 
 # dates = {
 #     "startDate": "11-15-2023",
@@ -73,34 +74,34 @@ authHeader = api_functions.generate_token(publicKey, privateKey, "classrooms")
 #         room["Meetings"] = [with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
 
 
-for room in blau_rooms:
+for room in ross_rooms:
     classroomID = room["FacilityID"]
     meetings = api_functions.get_data_from_endpoint(endpoints[4], classroomID, authHeader, dates)
     room["Meetings"] = [with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
 
-pprint(blau_rooms)
+pprint(ross_rooms)
 
 
-import requests
+# import requests
 
-def push_to_api(url, payload):
-    """Send JSON payload to API specified at URL"""
-    try:
-        # Post the data as JSON (directly pass the dictionary, no need for json.dumps)
-        response = requests.post(url, json=payload)
+# def push_to_api(url, payload):
+#     """Send JSON payload to API specified at URL"""
+#     try:
+#         # Post the data as JSON (directly pass the dictionary, no need for json.dumps)
+#         response = requests.post(url, json=payload)
         
-        # Check if the request was successful
-        if response.status_code == 200 or response.status_code == 201:
-            print("Push request sent successfully!")
-            # Print response if needed
-            print("Response:", response.json())
-        else:
-            print(f"Error: Received status code {response.status_code}")
-            print("Details:", response.text)
-    except requests.exceptions.RequestException as e:
-        print("Request failed:", e)
+#         # Check if the request was successful
+#         if response.status_code == 200 or response.status_code == 201:
+#             print("Push request sent successfully!")
+#             # Print response if needed
+#             print("Response:", response.json())
+#         else:
+#             print(f"Error: Received status code {response.status_code}")
+#             print("Details:", response.text)
+#     except requests.exceptions.RequestException as e:
+#         print("Request failed:", e)
 
-url = "http://127.0.0.1:5000/import_data"
+# url = "http://127.0.0.1:5000/import_data"
 
-# Pass the Python dictionary directly to the function
-push_to_api(url, blau_rooms)
+# # Pass the Python dictionary directly to the function
+# # push_to_api(url, blau_rooms)
