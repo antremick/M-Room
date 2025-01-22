@@ -6,67 +6,125 @@ import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 dayjs.extend(customParseFormat);
 
-// 1) We define our day range: 8 AM to 11 PM (same day)
+// 1) Day range: 8 AM to 11 PM
 const START_TIME = dayjs().hour(8).minute(0).second(0).millisecond(0);
 const END_TIME = dayjs().hour(23).minute(0).second(0).millisecond(0);
 
-// 2) Calculate total minutes in the window
-const TOTAL_MINUTES = END_TIME.diff(START_TIME, "minute"); // 8 AM–11 PM = 900 min
+// 2) Total minutes in [8 AM, 11 PM]
+const TOTAL_MINUTES = END_TIME.diff(START_TIME, "minute"); // 8–23 = 900 min
 
-// 3) We'll define a bar width
+// 3) Bar width
 const BAR_WIDTH = 300;
 const MINUTE_WIDTH = BAR_WIDTH / TOTAL_MINUTES;
 
-// Parse time strings like "10:00 AM" or "9:30 AM"
-function parseTime(timeStr) {
-  // Try both one-digit and two-digit hour
-  const parsed = dayjs(timeStr, ["h:mm A", "hh:mm A"], true);
-  if (!parsed.isValid()) {
-    console.warn("Invalid time:", timeStr);
-  }
-  return parsed;
-}
+// The break between 8 AM and 12 PM is 4 hours = 240 min => offset in px
+const NOON_OFFSET = 240 * MINUTE_WIDTH;
 
 export default function AvailabilityBar({ room }) {
-  // 'room' might be:
-  // {
-  //   roomNum: 'BLAU0560',
-  //   meetings: [
-  //     { MtgStartTime: '10:00 AM', MtgEndTime: '12:00 PM' },
-  //     { MtgStartTime: '2:30 PM', MtgEndTime: '4:00 PM' },
-  //   ]
-  // }
+  // We gather tick labels for bar edges and meeting edges
+  let ticks = [
+    { timeStr: "8:00 AM", left: 0, anchorEnd: false, isBarEdge: true },
+    { timeStr: "11:00 PM", left: BAR_WIDTH, anchorEnd: true, isBarEdge: true },
+  ];
+
+  // Collect offsets to skip end=nextStart
+  const startOffsets = [];
+  const endOffsets = [];
+
+  room.meetings.forEach((mtg) => {
+    startOffsets.push(timeToXPos(mtg.MtgStartTime));
+    endOffsets.push(timeToXPos(mtg.MtgEndTime));
+  });
+
+  // Add meeting times, skipping identical end = next start
+  room.meetings.forEach((mtg) => {
+    const startLeft = timeToXPos(mtg.MtgStartTime);
+    const endLeft = timeToXPos(mtg.MtgEndTime);
+
+    // Always add start
+    ticks.push({
+      timeStr: mtg.MtgStartTime,
+      left: startLeft,
+      isBarEdge: false,
+    });
+
+    // Add end only if no meeting starts at exactly the same offset
+    if (!startOffsets.includes(endLeft)) {
+      ticks.push({ timeStr: mtg.MtgEndTime, left: endLeft, isBarEdge: false });
+    }
+  });
+
+  // Sort them by left offset
+  ticks.sort((a, b) => a.left - b.left);
 
   return (
     <View style={styles.container}>
-      {/* Paper’s Text with a slightly bigger style variant */}
       <Text variant="titleMedium" style={styles.title}>
-        Room: {room.roomNum}
+        Availability:
       </Text>
 
-      <View style={styles.outerBar}>
-        {/* Entire bar green by default */}
-        <View style={[styles.bar, { backgroundColor: "green" }]} />
+      <View style={styles.barContainer}>
+        {/* AM/PM labels at start of each section */}
+        <Text style={[styles.amPmLabel, { left: 5 }]}>AM</Text>
+        <Text style={[styles.amPmLabel, { left: NOON_OFFSET + 5 }]}>PM</Text>
 
-        {/* Render a red overlay for each busy segment */}
-        {room.meetings.map((mtg, idx) => {
-          console.log("Start:", mtg.MtgStartTime, "End:", mtg.MtgEndTime);
-          const left = timeToXPos(mtg.MtgStartTime);
-          const width = calculateWidth(mtg.MtgStartTime, mtg.MtgEndTime);
+        {/* Outer bar has two sections: 8–12, 12–11 */}
+        <View style={styles.outerBar}>
+          {/* 8–12 portion: light blue */}
+          <View
+            style={[
+              styles.timeBlock,
+              {
+                left: 0,
+                width: NOON_OFFSET,
+                backgroundColor: "#90EE90", // light sky blue
+              },
+            ]}
+          />
+          {/* 12–11 portion: darker blue */}
+          <View
+            style={[
+              styles.timeBlock,
+              {
+                left: NOON_OFFSET,
+                width: BAR_WIDTH - NOON_OFFSET,
+                backgroundColor: "green", // steel blue
+              },
+            ]}
+          />
 
-          console.log("left:", left, "width:", width);
+          {/* Red busy segments */}
+          {room.meetings.map((mtg, idx) => {
+            const left = timeToXPos(mtg.MtgStartTime);
+            const width = calculateWidth(mtg.MtgStartTime, mtg.MtgEndTime);
+            return (
+              <View
+                key={idx}
+                style={[
+                  styles.busySegment,
+                  {
+                    left,
+                    width,
+                  },
+                ]}
+              />
+            );
+          })}
+        </View>
 
+        {/* Tick labels */}
+        {ticks.map((tick, index) => {
+          const shiftLeft = tick.anchorEnd ? -40 : 0;
           return (
-            <View
-              key={idx}
+            <Text
+              key={index}
               style={[
-                styles.busySegment,
-                {
-                  left: left,
-                  width: width,
-                },
+                styles.tickLabel,
+                { left: tick.left, transform: [{ translateX: shiftLeft }] },
               ]}
-            />
+            >
+              {formatTime(tick.timeStr)}
+            </Text>
           );
         })}
       </View>
@@ -74,22 +132,21 @@ export default function AvailabilityBar({ room }) {
   );
 }
 
-// Helper: Convert "10:00 AM" to dayjs, then compute X offset in px
+/** Convert "10:00 AM" => offset in px */
 function timeToXPos(timeStr) {
-  const timeObj = parseTime(timeStr);
-  if (!timeObj.isValid()) return 0; // fallback
-  let offsetMin = timeObj.diff(START_TIME, "minute");
+  const t = parseTime(timeStr);
+  if (!t.isValid()) return 0;
+  let offsetMin = t.diff(START_TIME, "minute");
   offsetMin = clamp(offsetMin, 0, TOTAL_MINUTES);
   return offsetMin * MINUTE_WIDTH;
 }
 
-// Helper: Calculate overlay width from startTime to endTime
+/** Calculate the busy (red) segment width */
 function calculateWidth(startStr, endStr) {
-  const startObj = parseTime(startStr);
-  const endObj = parseTime(endStr);
-
-  let startMin = startObj.diff(START_TIME, "minute");
-  let endMin = endObj.diff(START_TIME, "minute");
+  const s = parseTime(startStr);
+  const e = parseTime(endStr);
+  let startMin = s.diff(START_TIME, "minute");
+  let endMin = e.diff(START_TIME, "minute");
 
   startMin = clamp(startMin, 0, TOTAL_MINUTES);
   endMin = clamp(endMin, 0, TOTAL_MINUTES);
@@ -97,33 +154,84 @@ function calculateWidth(startStr, endStr) {
   return Math.max(0, endMin - startMin) * MINUTE_WIDTH;
 }
 
-// Simple clamp function
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(value, max));
+/** If it's "10:00 AM" or "9:30 AM", parse with dayjs. */
+function parseTime(timeStr) {
+  const parsed = dayjs(timeStr, ["h:mm A", "hh:mm A"], true);
+  if (!parsed.isValid()) console.warn("Invalid time:", timeStr);
+  return parsed;
 }
 
-// Styles
+/**
+ * Formats the time with no "AM"/"PM" and skipping ":00" if on the hour
+ * e.g. "8:00 AM" => "8", "9:30 AM" => "9:30", "11:15 PM" => "11:15"
+ */
+function formatTime(timeStr) {
+  const t = parseTime(timeStr);
+  if (!t.isValid()) return timeStr;
+  const hour24 = t.hour(); // 0..23
+  const minute = t.minute();
+
+  // Convert 24-hr to 12-hr for display (without AM/PM text)
+  let displayHour = hour24;
+  if (displayHour === 0) displayHour = 12; // midnight
+  if (displayHour > 12) displayHour -= 12;
+
+  if (minute === 0) {
+    return `${displayHour}`;
+  } else {
+    return `${displayHour}:${minute < 10 ? "0" : ""}${minute}`;
+  }
+}
+
+/** Clamps to [min..max] */
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(v, max));
+}
+
 const styles = StyleSheet.create({
   container: {
     marginVertical: 12,
   },
   title: {
-    marginBottom: 4,
+    marginBottom: 15,
+  },
+  barContainer: {
+    width: BAR_WIDTH,
+    height: 60,
+    position: "relative",
+  },
+  amPmLabel: {
+    position: "absolute",
+    top: -14, // place label above bar
+    fontSize: 12,
+    fontWeight: "bold",
   },
   outerBar: {
     width: BAR_WIDTH,
     height: 20,
-    position: "relative",
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: "#ccc",
+    overflow: "hidden",
+    position: "absolute",
+    top: 0,
+    left: 0,
   },
-  bar: {
-    ...StyleSheet.absoluteFillObject,
+  timeBlock: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
   },
   busySegment: {
     position: "absolute",
     top: 0,
     bottom: 0,
     backgroundColor: "red",
+    borderRadius: 10,
+  },
+  tickLabel: {
+    position: "absolute",
+    fontSize: 12,
+    top: 24,
   },
 });

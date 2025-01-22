@@ -10,14 +10,28 @@ def import_data():
     """
     Expects JSON in the form of a list of objects, e.g.:
     """
+    conn = get_db()
+    # 1) Clear existing rows in each table
+    conn.execute("DELETE FROM room")
+    conn.execute("DELETE FROM building")
+    conn.commit()
+    
     try:
       data = flask.request.get_json(force=True)
       if not data:
         return flask.jsonify({"error": "No JSON payload received"}), 400
 
+      # load building names data
+      # Load the JSON dictionary
+      with open('scripts/buildings.json', 'r') as json_file:
+          building_data = json.load(json_file)
+
       # data should be a list of dictionaries
       for item in data:
-          building_name = item["BldDescrShort"]
+          if item["BuildingID"] in building_data:
+              building_name = building_data[item["BuildingID"]]
+          else:
+              building_name = item["BldDescrShort"]
           room_num = item["FacilityID"]
           meetings = item.get("Meetings", [])
 
