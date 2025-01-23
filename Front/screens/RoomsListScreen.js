@@ -1,15 +1,19 @@
 // File: screens/RoomsListScreen.js
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, FlatList } from "react-native";
-import { ActivityIndicator, Text, Card } from "react-native-paper";
+import { ActivityIndicator, Text, Card, Searchbar } from "react-native-paper";
 import AvailabilityBar from "./AvailabilityBar";
 
 const ROOMS_URL = "http://127.0.0.1:5000/rooms";
 
 export default function RoomsListScreen({ route }) {
   const { building } = route.params;
+
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // State for search text
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchRooms();
@@ -31,8 +35,8 @@ export default function RoomsListScreen({ route }) {
     }
   }
 
+  // If still loading from the API
   if (loading) {
-    // Use Paper's ActivityIndicator
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator animating={true} size="large" />
@@ -40,8 +44,8 @@ export default function RoomsListScreen({ route }) {
     );
   }
 
+  // If no rooms at all for this building
   if (rooms.length === 0) {
-    // Use Paper's Text
     return (
       <View style={styles.loadingContainer}>
         <Text variant="bodyLarge">No rooms found for {building.name}.</Text>
@@ -49,22 +53,45 @@ export default function RoomsListScreen({ route }) {
     );
   }
 
+  // Derive displayed rooms based on search
+  const displayedRooms = rooms.filter((r) =>
+    r.roomNum.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // If displayedRooms is empty, user typed something that doesn't match any room
+  // You can optionally show a small message or just show an empty list
+
   return (
-    <FlatList
-      contentContainerStyle={styles.container}
-      data={rooms}
-      keyExtractor={(item) => item.id.toString()}
-      renderItem={({ item }) => (
-        <Card style={styles.card}>
-          {/* Title for the room */}
-          <Card.Title title={item.roomNum} titleStyle={styles.cardTitle} />
-          {/* AvailabilityBar inside Card.Content */}
-          <Card.Content>
-            <AvailabilityBar room={item} />
-          </Card.Content>
-        </Card>
-      )}
-    />
+    <View style={styles.container}>
+      {/* Explanation message */}
+      <Text style={styles.infoText}>
+        Times in <Text style={{ color: "red", fontWeight: "bold" }}>red</Text>{" "}
+        indicate a meeting starts at that half-hour.
+      </Text>
+
+      {/* Searchbar from React Native Paper */}
+      <Searchbar
+        placeholder="Search rooms..."
+        onChangeText={(text) => setSearchQuery(text)}
+        value={searchQuery}
+        style={styles.searchbar}
+      />
+
+      {/* Render a filtered list of rooms */}
+      <FlatList
+        data={displayedRooms}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        renderItem={({ item }) => (
+          <Card style={styles.card}>
+            <Card.Title title={item.roomNum} titleStyle={styles.cardTitle} />
+            <Card.Content>
+              <AvailabilityBar room={item} />
+            </Card.Content>
+          </Card>
+        )}
+      />
+    </View>
   );
 }
 
@@ -74,8 +101,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  infoText: {
+    marginBottom: 6,
+    marginHorizontal: 8,
+    fontSize: 14,
+  },
   container: {
-    padding: 16,
+    flex: 1,
+    padding: 8,
+  },
+  listContent: {
+    paddingBottom: 16,
+  },
+  searchbar: {
+    marginBottom: 10,
   },
   card: {
     marginBottom: 10,

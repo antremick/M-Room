@@ -1,237 +1,141 @@
-// File: AvailabilityBar.js
-import React from "react";
-import { StyleSheet, View } from "react-native";
-import { Text } from "react-native-paper";
-import dayjs from "dayjs";
-import customParseFormat from "dayjs/plugin/customParseFormat";
-dayjs.extend(customParseFormat);
+import React, { useMemo } from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 
-// 1) Day range: 8 AM to 11 PM
-const START_TIME = dayjs().hour(8).minute(0).second(0).millisecond(0);
-const END_TIME = dayjs().hour(23).minute(0).second(0).millisecond(0);
+// Example: We'll assume times from 7:00 PM (19 in 24-hour) on one day
+// to 6:00 AM (6 in 24-hour) next day, but do it in 30-min increments.
+const START_HOUR_24 = 8; // 8 AM
+const END_HOUR_24 = 23; // 11 PM
 
-// 2) Total minutes in [8 AM, 11 PM]
-const TOTAL_MINUTES = END_TIME.diff(START_TIME, "minute"); // 8–23 = 900 min
+/**
+ * A single row of horizontally scrollable half-hour slots, each colored
+ * green if free, red if a meeting starts at that half-hour.
+ */
+export default function AvailabilityGrid({ room }) {
+  // We have a small explanation at the top
+  // "A time is red if a meeting starts at that time"
 
-// 3) Bar width
-const BAR_WIDTH = 300;
-const MINUTE_WIDTH = BAR_WIDTH / TOTAL_MINUTES;
+  // Convert each meeting start time into a minute-of-day for quick comparison
+  const meetingStartOffsets = useMemo(() => {
+    return room.meetings.map((m) => parseTimeToMinutes(m.MtgStartTime));
+  }, [room.meetings]);
 
-// The break between 8 AM and 12 PM is 4 hours = 240 min => offset in px
-const NOON_OFFSET = 240 * MINUTE_WIDTH;
-
-export default function AvailabilityBar({ room }) {
-  // We gather tick labels for bar edges and meeting edges
-  let ticks = [
-    { timeStr: "8:00 AM", left: 0, anchorEnd: false, isBarEdge: true },
-    { timeStr: "11:00 PM", left: BAR_WIDTH, anchorEnd: true, isBarEdge: true },
-  ];
-
-  // Collect offsets to skip end=nextStart
-  const startOffsets = [];
-  const endOffsets = [];
-
-  room.meetings.forEach((mtg) => {
-    startOffsets.push(timeToXPos(mtg.MtgStartTime));
-    endOffsets.push(timeToXPos(mtg.MtgEndTime));
-  });
-
-  // Add meeting times, skipping identical end = next start
-  room.meetings.forEach((mtg) => {
-    const startLeft = timeToXPos(mtg.MtgStartTime);
-    const endLeft = timeToXPos(mtg.MtgEndTime);
-
-    // Always add start
-    ticks.push({
-      timeStr: mtg.MtgStartTime,
-      left: startLeft,
-      isBarEdge: false,
-    });
-
-    // Add end only if no meeting starts at exactly the same offset
-    if (!startOffsets.includes(endLeft)) {
-      ticks.push({ timeStr: mtg.MtgEndTime, left: endLeft, isBarEdge: false });
+  // Build a list of half-hour increments
+  // e.g. 7:00 PM -> 19:00, 7:30 -> 19:30, 8:00 -> 20:00, … up to 6:00 next day
+  const slots = useMemo(() => {
+    const result = [];
+    let currentHour = START_HOUR_24;
+    let currentMinute = 0; // 0 or 30
+    // We'll loop until we wrap around to END_HOUR_24 in hours
+    while (true) {
+      result.push({ hour24: currentHour, minute: currentMinute });
+      // Move forward 30 min
+      currentMinute += 30;
+      if (currentMinute >= 60) {
+        currentMinute = 0;
+        currentHour = (currentHour + 1) % 24;
+      }
+      // Check if we reached or passed END_HOUR_24 with hour+minute=0
+      if (currentHour === END_HOUR_24 && currentMinute === 0) {
+        break;
+      }
     }
-  });
+    return result;
+  }, []);
 
-  // Sort them by left offset
-  ticks.sort((a, b) => a.left - b.left);
+  /**
+   * Tells us if a meeting starts exactly at this half-hour slot.
+   * We compare to the meetingStartOffsets array.
+   */
+  function isMeetingStart(hour24, min) {
+    const offset = hour24ToAbsoluteMin(hour24) + min;
+    return meetingStartOffsets.includes(offset);
+  }
 
   return (
     <View style={styles.container}>
-      <Text variant="titleMedium" style={styles.title}>
-        Availability:
-      </Text>
 
-      <View style={styles.barContainer}>
-        {/* AM/PM labels at start of each section */}
-        <Text style={[styles.amPmLabel, { left: 5 }]}>AM</Text>
-        <Text style={[styles.amPmLabel, { left: NOON_OFFSET + 5 }]}>PM</Text>
 
-        {/* Outer bar has two sections: 8–12, 12–11 */}
-        <View style={styles.outerBar}>
-          {/* 8–12 portion: light blue */}
-          <View
-            style={[
-              styles.timeBlock,
-              {
-                left: 0,
-                width: NOON_OFFSET,
-                backgroundColor: "#90EE90", // light sky blue
-              },
-            ]}
-          />
-          {/* 12–11 portion: darker blue */}
-          <View
-            style={[
-              styles.timeBlock,
-              {
-                left: NOON_OFFSET,
-                width: BAR_WIDTH - NOON_OFFSET,
-                backgroundColor: "green", // steel blue
-              },
-            ]}
-          />
+      <Text style={styles.roomTitle}>Availibility:</Text>
 
-          {/* Red busy segments */}
-          {room.meetings.map((mtg, idx) => {
-            const left = timeToXPos(mtg.MtgStartTime);
-            const width = calculateWidth(mtg.MtgStartTime, mtg.MtgEndTime);
+      <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+        <View style={styles.rowContainer}>
+          {slots.map((slot, index) => {
+            const { hour24, minute } = slot;
+            const busy = isMeetingStart(hour24, minute);
+            const label = formatHalfHour(hour24, minute);
             return (
               <View
-                key={idx}
+                key={index}
                 style={[
-                  styles.busySegment,
-                  {
-                    left,
-                    width,
-                  },
+                  styles.slotCell,
+                  { backgroundColor: busy ? "red" : "green" },
                 ]}
-              />
+              >
+                <Text style={styles.slotLabel}>{label}</Text>
+              </View>
             );
           })}
         </View>
-
-        {/* Tick labels */}
-        {ticks.map((tick, index) => {
-          const shiftLeft = tick.anchorEnd ? -40 : 0;
-          return (
-            <Text
-              key={index}
-              style={[
-                styles.tickLabel,
-                { left: tick.left, transform: [{ translateX: shiftLeft }] },
-              ]}
-            >
-              {formatTime(tick.timeStr)}
-            </Text>
-          );
-        })}
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
-/** Convert "10:00 AM" => offset in px */
-function timeToXPos(timeStr) {
-  const t = parseTime(timeStr);
-  if (!t.isValid()) return 0;
-  let offsetMin = t.diff(START_TIME, "minute");
-  offsetMin = clamp(offsetMin, 0, TOTAL_MINUTES);
-  return offsetMin * MINUTE_WIDTH;
+/** Convert "9:00 PM" -> an absolute minute of the day (0..1439). */
+function parseTimeToMinutes(timeStr) {
+  // Basic parse: "HH:MM AM/PM"
+  const [timePart, ampmPart] = timeStr.split(" ");
+  const [hourStr, minStr] = timePart.split(":");
+  let hour = parseInt(hourStr, 10) % 12; // 12 -> 0
+  const minute = parseInt(minStr, 10) || 0;
+  if ((ampmPart || "").toUpperCase() === "PM") hour += 12;
+  return hour * 60 + minute;
 }
 
-/** Calculate the busy (red) segment width */
-function calculateWidth(startStr, endStr) {
-  const s = parseTime(startStr);
-  const e = parseTime(endStr);
-  let startMin = s.diff(START_TIME, "minute");
-  let endMin = e.diff(START_TIME, "minute");
-
-  startMin = clamp(startMin, 0, TOTAL_MINUTES);
-  endMin = clamp(endMin, 0, TOTAL_MINUTES);
-
-  return Math.max(0, endMin - startMin) * MINUTE_WIDTH;
+/** Convert an hour24 (0..23) into absolute minutes for that day. */
+function hour24ToAbsoluteMin(hour24) {
+  return hour24 * 60;
 }
 
-/** If it's "10:00 AM" or "9:30 AM", parse with dayjs. */
-function parseTime(timeStr) {
-  const parsed = dayjs(timeStr, ["h:mm A", "hh:mm A"], true);
-  if (!parsed.isValid()) console.warn("Invalid time:", timeStr);
-  return parsed;
-}
-
-/**
- * Formats the time with no "AM"/"PM" and skipping ":00" if on the hour
- * e.g. "8:00 AM" => "8", "9:30 AM" => "9:30", "11:15 PM" => "11:15"
- */
-function formatTime(timeStr) {
-  const t = parseTime(timeStr);
-  if (!t.isValid()) return timeStr;
-  const hour24 = t.hour(); // 0..23
-  const minute = t.minute();
-
-  // Convert 24-hr to 12-hr for display (without AM/PM text)
-  let displayHour = hour24;
-  if (displayHour === 0) displayHour = 12; // midnight
-  if (displayHour > 12) displayHour -= 12;
-
+/** Format "19,30" => "7:30 PM", "0,0" => "12 AM" */
+function formatHalfHour(hour24, minute) {
+  // Convert 24-hr to 12-hr
+  let h12 = hour24 % 12;
+  if (h12 === 0) h12 = 12;
+  const ampm = hour24 < 12 ? "AM" : "PM";
   if (minute === 0) {
-    return `${displayHour}`;
-  } else {
-    return `${displayHour}:${minute < 10 ? "0" : ""}${minute}`;
+    return `${h12} ${ampm}`;
   }
-}
-
-/** Clamps to [min..max] */
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(v, max));
+  // e.g. "7:30 PM"
+  return `${h12}:${minute < 10 ? "0" : ""}${minute} ${ampm}`;
 }
 
 const styles = StyleSheet.create({
   container: {
     marginVertical: 12,
+    marginHorizontal: 0,
   },
-  title: {
-    marginBottom: 15,
+  infoText: {
+    marginBottom: 6,
+    fontSize: 14,
   },
-  barContainer: {
-    width: BAR_WIDTH,
-    height: 60,
-    position: "relative",
-  },
-  amPmLabel: {
-    position: "absolute",
-    top: -14, // place label above bar
-    fontSize: 12,
+  roomTitle: {
+    fontSize: 16,
     fontWeight: "bold",
+    marginBottom: 6,
   },
-  outerBar: {
-    width: BAR_WIDTH,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    overflow: "hidden",
-    position: "absolute",
-    top: 0,
-    left: 0,
+  rowContainer: {
+    flexDirection: "row",
   },
-  timeBlock: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
+  slotCell: {
+    width: 65,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 2,
   },
-  busySegment: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    backgroundColor: "red",
-    borderRadius: 10,
-  },
-  tickLabel: {
-    position: "absolute",
-    fontSize: 12,
-    top: 24,
+  slotLabel: {
+    color: "#fff",
+    fontWeight: "600",
   },
 });
