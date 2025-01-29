@@ -1,25 +1,31 @@
-# API/model.py
-import sqlite3
+# File: API/model.py
+import os
 import flask
-import pathlib
+import psycopg2
+import psycopg2.extras
 from API import app
 
-# Path to your actual SQLite DB file
-# You could also store this in app.config if you prefer
-DB_FILENAME = pathlib.Path(__file__).resolve().parent / "API.sqlite3"
-
 def get_db():
-    """Open a new database connection if none exists for the current context."""
-    if 'sqlite_db' not in flask.g:
-        # Connect to the DB file; you can set additional flags/PRAGMA as needed
-        flask.g.sqlite_db = sqlite3.connect(DB_FILENAME)
-        # Return rows as dictionaries (optional):
-        flask.g.sqlite_db.row_factory = sqlite3.Row
-    return flask.g.sqlite_db
+    """
+    Open a new PostgreSQL database connection if none exists
+    for the current Flask request context.
+    """
+    if 'pg_conn' not in flask.g:
+        # Heroku provides DATABASE_URL, e.g. "postgres://user:pass@host:port/dbname"
+        db_url = os.environ['DATABASE_URL']  
+        
+        # Connect using a dict cursor so rows behave somewhat like SQLite row_factory
+        conn = psycopg2.connect(db_url, cursor_factory=psycopg2.extras.DictCursor)
+        
+        # Store in flask.g for this request
+        flask.g.pg_conn = conn
+    return flask.g.pg_conn
 
 @app.teardown_appcontext
 def close_db(exception):
-    """Close the database at the end of each request."""
-    db = flask.g.pop('sqlite_db', None)
-    if db is not None:
-        db.close()
+    """
+    Close the PostgreSQL connection at the end of each request, if open.
+    """
+    pg_conn = flask.g.pop('pg_conn', None)
+    if pg_conn is not None:
+        pg_conn.close()
