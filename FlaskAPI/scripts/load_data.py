@@ -47,14 +47,14 @@ def main():
     classrooms = [api_functions.without_keys(room, ["CampusCd", "CampusDescr"]) for room in classrooms]
     authHeader = api_functions.generate_token(publicKey, privateKey, "classrooms")
    
-    # myset = set()
-    # print("Parsing Classrooms")
-    # for room in classrooms:
-    #     # myset.add(room["BldDescrShort"])
-    #     classroomID = room["FacilityID"]
-    #     # Get meetings for each classroom
-    #     meetings = api_functions.get_data_from_endpoint(endpoints[4], classroomID, authHeader, date)
-    #     room["Meetings"] = [api_functions.with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
+    myset = set()
+    print("Parsing Classrooms")
+    for room in classrooms:
+        # myset.add(room["BldDescrShort"])
+        classroomID = room["FacilityID"]
+        # Get meetings for each classroom
+        meetings = api_functions.get_data_from_endpoint(endpoints[4], classroomID, authHeader, date)
+        room["Meetings"] = [api_functions.with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
 
     
 
