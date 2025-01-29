@@ -59,7 +59,7 @@ def main():
 
     
 
-    url = "http://127.0.0.1:5000/import_data"
+    url = ""
 
     # Pass the Python dictionary directly to the function
     print("Pushing to API")
