@@ -5,7 +5,7 @@ import { ActivityIndicator, Text, Card, Searchbar } from "react-native-paper";
 import AvailabilityBar from "./AvailabilityBar";
 
 // const ROOMS_URL = "https://gaoiuxwhjh.execute-api.us-east-2.amazonaws.com/dev/rooms";
-const ROOMS_URL = "http://127.0.0.1:5000/rooms";
+const ROOMS_URL = "https://mroom-api-c7aef75a74b0.herokuapp.com/rooms";
 
 export default function RoomsListScreen({ route }) {
   const { building } = route.params;

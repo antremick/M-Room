@@ -4,6 +4,9 @@ from API import app
 from API.db_setup import get_or_create_building, insert_room
 from API.model import get_db
 import json
+import psycopg2
+from psycopg2 import errors
+
 
 @app.route("/")
 def index():
@@ -17,17 +20,27 @@ def import_data():
     """
     conn = get_db()
     try:
-        # 1) Clear existing rows in each table (use a cursor)
+        # 1) Clear existing rows in each table only if they exist
         with conn.cursor() as cursor:
-            cursor.execute("DELETE FROM room")
-            cursor.execute("DELETE FROM building")
+            try:
+                cursor.execute("DELETE FROM room;")
+            except psycopg2.errors.UndefinedTable:
+                # Table 'room' doesn't exist, so skip
+                pass
+
+            try:
+                cursor.execute("DELETE FROM building;")
+            except psycopg2.errors.UndefinedTable:
+                # Table 'building' doesn't exist, so skip
+                pass
+
         conn.commit()
 
         data = flask.request.get_json(force=True)
         if not data:
             return flask.jsonify({"error": "No JSON payload received"}), 400
 
-        # Load the JSON dictionary from a local file (if you truly want this in production)
+        # Load the JSON dictionary from a local file
         with open('scripts/buildings.json', 'r') as json_file:
             building_data = json.load(json_file)
 
@@ -52,6 +65,7 @@ def import_data():
         return flask.jsonify({"error": f"Missing key: {str(e)}"}), 400
     except Exception as e:
         return flask.jsonify({"error": str(e)}), 500
+
 
 @app.route("/buildings", methods=["GET"])
 def get_buildings():

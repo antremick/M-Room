@@ -5,8 +5,8 @@ import { ActivityIndicator, Searchbar, List } from "react-native-paper";
 import Fuse from "fuse.js";
 
 // Replace with the URL to your Flask endpoint for building data
-// const BUILDINGS_URL = "https://gaoiuxwhjh.execute-api.us-east-2.amazonaws.com/dev/buildings";
-const BUILDINGS_URL = "http://127.0.0.1:5000/buildings";
+const BUILDINGS_URL = "https://mroom-api-c7aef75a74b0.herokuapp.com/buildings";
+// const BUILDINGS_URL = "http://127.0.0.1:5000/buildings";
 
 
 export default function BuildingsListScreen({ navigation }) {

@@ -107,8 +107,16 @@ def with_keys(my_dict, keep):
 def push_to_api(url, payload):
         """Send JSON payload to API specified at URL"""
         try:
+
+            headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+            }
             # Post the data as JSON (directly pass the dictionary, no need for json.dumps)
-            response = requests.post(url, json=payload)
+            print("Posting to:")
+            print(url)
+            print(" ")
+            response = requests.post(url, json=payload, headers=headers)
             
             # Check if the request was successful
             if response.status_code == 200 or response.status_code == 201:

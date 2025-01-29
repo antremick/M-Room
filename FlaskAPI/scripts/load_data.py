@@ -43,23 +43,22 @@ def main():
 
     with open('data.json', 'w') as json_file:
         json.dump(classrooms, json_file)
-        
     # remove buildingid, campus code, and campus description keys 
     classrooms = [api_functions.without_keys(room, ["CampusCd", "CampusDescr"]) for room in classrooms]
     authHeader = api_functions.generate_token(publicKey, privateKey, "classrooms")
    
-    myset = set()
-    print("Parsing Classrooms")
-    for room in classrooms:
-        # myset.add(room["BldDescrShort"])
-        classroomID = room["FacilityID"]
-        # Get meetings for each classroom
-        meetings = api_functions.get_data_from_endpoint(endpoints[4], classroomID, authHeader, date)
-        room["Meetings"] = [api_functions.with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
+    # myset = set()
+    # print("Parsing Classrooms")
+    # for room in classrooms:
+    #     # myset.add(room["BldDescrShort"])
+    #     classroomID = room["FacilityID"]
+    #     # Get meetings for each classroom
+    #     meetings = api_functions.get_data_from_endpoint(endpoints[4], classroomID, authHeader, date)
+    #     room["Meetings"] = [api_functions.with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
 
     
 
-    url = ""
+    url = "https://mroom-api-c7aef75a74b0.herokuapp.com/import_data"
 
     # Pass the Python dictionary directly to the function
     print("Pushing to API")
