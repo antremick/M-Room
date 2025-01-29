@@ -1,10 +1,15 @@
 # File: API/routes.py
 import flask
 from API import app
-from API.db_setup import get_or_create_building, insert_room
+from API.db_setup_prod import get_or_create_building, insert_room
 from API.model import get_db
 import json
 from pprint import pprint
+
+@app.route("/")
+def index():
+    return "Hello from Zappa + Flask!"
+
 @app.route("/import_data", methods=["POST"])
 def import_data():
     """

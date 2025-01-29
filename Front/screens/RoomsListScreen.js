@@ -4,6 +4,7 @@ import { View, StyleSheet, FlatList } from "react-native";
 import { ActivityIndicator, Text, Card, Searchbar } from "react-native-paper";
 import AvailabilityBar from "./AvailabilityBar";
 
+// const ROOMS_URL = "https://gaoiuxwhjh.execute-api.us-east-2.amazonaws.com/dev/rooms";
 const ROOMS_URL = "http://127.0.0.1:5000/rooms";
 
 export default function RoomsListScreen({ route }) {
@@ -115,6 +116,10 @@ const styles = StyleSheet.create({
   },
   searchbar: {
     marginBottom: 10,
+    backgroundColor: "#91BAD6", // University of Michigan blue
+  },
+    searchInput: {
+    color: 'white', // Ensure text color is white
   },
   card: {
     marginBottom: 10,

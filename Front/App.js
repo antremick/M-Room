@@ -11,6 +11,7 @@ import {
 
 import BuildingsListScreen from "./screens/BuildingsListScreen";
 import RoomsListScreen from "./screens/RoomsListScreen";
+import WelcomeScreen from "./screens/WelcomeScreen";
 
 // 2) (Optional) Create a custom theme to override colors, fonts, etc.
 const theme = {
@@ -30,7 +31,13 @@ export default function App() {
     // 3) Wrap everything in PaperProvider
     <PaperProvider theme={theme}>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="BuildingsList">
+        <Stack.Navigator initialRouteName="Welcome">
+          <Stack.Screen
+            name="Welcome"
+            component={WelcomeScreen}
+            options={{ headerShown: false }}
+          />
+
           <Stack.Screen
             name="BuildingsList"
             component={BuildingsListScreen}

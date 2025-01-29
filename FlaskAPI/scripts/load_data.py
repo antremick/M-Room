@@ -13,6 +13,8 @@ import requests
 
 
 
+
+
 def main():
     """Main function for importing classrooms and other data"""
     load_dotenv()
@@ -28,25 +30,20 @@ def main():
         "/Classrooms/{RoomID}/Meetings"
     ]
 
-    #HARDCODED IN FOR DEVELOPMENT AND TESTING 
-    dates = {
-        "startDate": "6-1-2024",
-        "endDate": "6-7-2024"
+   
+    date = {
+        "startDate": api_functions.get_today_date(),
+        "endDate": api_functions.get_today_date()
     }
 
     # Load in Classrooms
     print("Loading in Buildings")
     classrooms = api_functions.get_classroom(publicKey, privateKey)
-    pprint(classrooms)
 
-
-    ROSS_CODE = 'ROSS BUS'  
-    ross_rooms = [api_functions.without_keys(room, ["BuildingID", "CampusCd", "CampusDescr"])  for room in classrooms if room["BldDescrShort"] == ROSS_CODE]
-    print("Ross Rooms")
-    pprint(ross_rooms)
 
     with open('data.json', 'w') as json_file:
         json.dump(classrooms, json_file)
+        
     # remove buildingid, campus code, and campus description keys 
     classrooms = [api_functions.without_keys(room, ["CampusCd", "CampusDescr"]) for room in classrooms]
     authHeader = api_functions.generate_token(publicKey, privateKey, "classrooms")
@@ -57,7 +54,7 @@ def main():
         # myset.add(room["BldDescrShort"])
         classroomID = room["FacilityID"]
         # Get meetings for each classroom
-        meetings = api_functions.get_data_from_endpoint(endpoints[4], classroomID, authHeader, dates)
+        meetings = api_functions.get_data_from_endpoint(endpoints[4], classroomID, authHeader, date)
         room["Meetings"] = [api_functions.with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
 
     

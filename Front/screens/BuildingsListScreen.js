@@ -5,7 +5,9 @@ import { ActivityIndicator, Searchbar, List } from "react-native-paper";
 import Fuse from "fuse.js";
 
 // Replace with the URL to your Flask endpoint for building data
+// const BUILDINGS_URL = "https://gaoiuxwhjh.execute-api.us-east-2.amazonaws.com/dev/buildings";
 const BUILDINGS_URL = "http://127.0.0.1:5000/buildings";
+
 
 export default function BuildingsListScreen({ navigation }) {
   const [buildings, setBuildings] = useState([]);
@@ -100,6 +102,8 @@ const styles = StyleSheet.create({
   },
   searchbar: {
     margin: 10,
+    marginBottom: 10,
+    backgroundColor: "#91BAD6", // University of Michigan blue
   },
   separator: {
     height: 1,

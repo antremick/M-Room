@@ -2,7 +2,7 @@
 from pprint import pprint
 import requests
 import json
-
+from datetime import date 
 
 # Your public and private API keys
 def generate_token(public_key, private_key, scope):
@@ -120,3 +120,13 @@ def push_to_api(url, payload):
                 print("Details:", response.text)
         except requests.exceptions.RequestException as e:
             print("Request failed:", e)
+
+def get_today_date():
+    """
+    Returns today's date as a string in 'MM-DD-YYYY' format.
+    """
+    today = date.today()
+    formatted_date = today.strftime("%-m-%-d-%Y")  # For Unix-based systems
+    # If you're on Windows, use the following line instead:
+    # formatted_date = today.strftime("%#m-%#d-%Y")
+    return formatted_date

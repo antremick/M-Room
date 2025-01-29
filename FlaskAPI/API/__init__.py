@@ -8,3 +8,4 @@ app = flask.Flask(__name__)     # The central Flask app
 
 import API.model           # So model.py can hook up 'get_db()'
 import API.routes             # So routes.py can register routes
+from .routes import *

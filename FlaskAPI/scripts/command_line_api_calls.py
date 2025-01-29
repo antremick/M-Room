@@ -62,8 +62,8 @@ pprint(ross_rooms)
 # }
 
 dates = {
-    "startDate": "6-1-2024",
-    "endDate": "6-7-2024"
+    "startDate": "1-27-2025",
+    "endDate": "1-27-2025"
 }
 authHeader = api_functions.generate_token(publicKey, privateKey, "classrooms")
 # for room in blau_rooms:
@@ -74,12 +74,12 @@ authHeader = api_functions.generate_token(publicKey, privateKey, "classrooms")
 #         room["Meetings"] = [with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
 
 
-for room in ross_rooms:
+for room in blau_rooms:
     classroomID = room["FacilityID"]
     meetings = api_functions.get_data_from_endpoint(endpoints[4], classroomID, authHeader, dates)
     room["Meetings"] = [with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
 
-pprint(ross_rooms)
+pprint(blau_rooms)
 
 
 # import requests

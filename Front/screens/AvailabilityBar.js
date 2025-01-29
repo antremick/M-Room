@@ -1,77 +1,86 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 
-// Example: We'll assume times from 7:00 PM (19 in 24-hour) on one day
-// to 6:00 AM (6 in 24-hour) next day, but do it in 30-min increments.
-const START_HOUR_24 = 8; // 8 AM
-const END_HOUR_24 = 23; // 11 PM
+// Adjust these to define the timeline range in 24-hr format
+const START_HOUR_24 = 8; // 8:00 AM
+const END_HOUR_24 = 23; // 11:00 PM
 
-/**
- * A single row of horizontally scrollable half-hour slots, each colored
- * green if free, red if a meeting starts at that half-hour.
- */
-export default function AvailabilityGrid({ room }) {
-  // We have a small explanation at the top
-  // "A time is red if a meeting starts at that time"
+export default function AvailabilityBar({ room }) {
+  const scrollRef = useRef(null);
 
-  // Convert each meeting start time into a minute-of-day for quick comparison
-  const meetingStartOffsets = useMemo(() => {
-    return room.meetings.map((m) => parseTimeToMinutes(m.MtgStartTime));
-  }, [room.meetings]);
-
-  // Build a list of half-hour increments
-  // e.g. 7:00 PM -> 19:00, 7:30 -> 19:30, 8:00 -> 20:00, … up to 6:00 next day
+  // Build half-hour slots from START_HOUR_24 to END_HOUR_24
   const slots = useMemo(() => {
     const result = [];
-    let currentHour = START_HOUR_24;
-    let currentMinute = 0; // 0 or 30
-    // We'll loop until we wrap around to END_HOUR_24 in hours
+    let hour = START_HOUR_24;
+    let min = 0;
     while (true) {
-      result.push({ hour24: currentHour, minute: currentMinute });
-      // Move forward 30 min
-      currentMinute += 30;
-      if (currentMinute >= 60) {
-        currentMinute = 0;
-        currentHour = (currentHour + 1) % 24;
+      result.push({ hour24: hour, minute: min });
+      min += 30;
+      if (min >= 60) {
+        min = 0;
+        hour = (hour + 1) % 24;
       }
-      // Check if we reached or passed END_HOUR_24 with hour+minute=0
-      if (currentHour === END_HOUR_24 && currentMinute === 0) {
+      if (hour === END_HOUR_24 && min === 0) {
         break;
       }
     }
     return result;
   }, []);
 
-  /**
-   * Tells us if a meeting starts exactly at this half-hour slot.
-   * We compare to the meetingStartOffsets array.
-   */
-  function isMeetingStart(hour24, min) {
-    const offset = hour24ToAbsoluteMin(hour24) + min;
-    return meetingStartOffsets.includes(offset);
-  }
+  const CELL_WIDTH = 65;
+
+  // On mount, scroll to the current time (floored to nearest half-hour)
+  useEffect(() => {
+    if (!scrollRef.current) return;
+
+    const now = new Date();
+    let hour24 = now.getHours();
+    let minute = now.getMinutes();
+    minute = minute < 30 ? 0 : 30;
+
+    let index = 0;
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i];
+      if (
+        timeToAbsoluteMinutes(slot.hour24, slot.minute) >=
+        timeToAbsoluteMinutes(hour24, minute)
+      ) {
+        index = i;
+        break;
+      }
+    }
+    scrollRef.current.scrollTo({
+      x: index * CELL_WIDTH,
+      y: 0,
+      animated: false,
+    });
+  }, [slots]);
 
   return (
     <View style={styles.container}>
-
-
-      <Text style={styles.roomTitle}>Availibility:</Text>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-        <View style={styles.rowContainer}>
-          {slots.map((slot, index) => {
-            const { hour24, minute } = slot;
-            const busy = isMeetingStart(hour24, minute);
-            const label = formatHalfHour(hour24, minute);
+      <Text style={styles.roomTitle}>{room.roomNum}</Text>
+      <ScrollView horizontal ref={scrollRef} showsHorizontalScrollIndicator>
+        <View style={{ flexDirection: "row" }}>
+          {slots.map((slot, i) => {
+            const label = formatSlot(slot.hour24, slot.minute);
+            // Mark slot red if it overlaps any meeting's start-end range
+            const inMeeting = isSlotInMeeting(
+              room.meetings,
+              slot.hour24,
+              slot.minute
+            );
             return (
               <View
-                key={index}
+                key={i}
                 style={[
                   styles.slotCell,
-                  { backgroundColor: busy ? "red" : "green" },
+                  {
+                    backgroundColor: inMeeting ? "red" : "green",
+                    width: CELL_WIDTH,
+                  },
                 ]}
               >
-                <Text style={styles.slotLabel}>{label}</Text>
+                <Text style={styles.slotText}>{label}</Text>
               </View>
             );
           })}
@@ -81,60 +90,63 @@ export default function AvailabilityGrid({ room }) {
   );
 }
 
-/** Convert "9:00 PM" -> an absolute minute of the day (0..1439). */
-function parseTimeToMinutes(timeStr) {
-  // Basic parse: "HH:MM AM/PM"
-  const [timePart, ampmPart] = timeStr.split(" ");
-  const [hourStr, minStr] = timePart.split(":");
-  let hour = parseInt(hourStr, 10) % 12; // 12 -> 0
-  const minute = parseInt(minStr, 10) || 0;
-  if ((ampmPart || "").toUpperCase() === "PM") hour += 12;
+/**
+ * Check if the half-hour slot (hour24, minute) is within any meeting's range.
+ * If a meeting ends at 9:00 PM, the slot starting at 9:00 PM is green
+ * (since end time is exclusive).
+ */
+function isSlotInMeeting(meetings, hour24, min) {
+  const slotMin = timeToAbsoluteMinutes(hour24, min);
+  return meetings.some((mtg) => {
+    const startMin = parseTimeToMinutes(mtg.MtgStartTime);
+    const endMin = parseTimeToMinutes(mtg.MtgEndTime);
+    // Occupied if slotMin >= start && slotMin < end
+    return slotMin >= startMin && slotMin < endMin;
+  });
+}
+
+/** Convert hour24 + minute -> absolute minutes in [0..1439]. */
+function timeToAbsoluteMinutes(h24, m) {
+  return h24 * 60 + m;
+}
+
+/**
+ * Parse times like "9:00 PM" -> 1260 (21*60).
+ * Adjust to your actual meeting times format as needed.
+ */
+function parseTimeToMinutes(str) {
+  const [timePart, ampm] = str.split(" ");
+  const [hh, mm] = timePart.split(":");
+  let hour = parseInt(hh, 10) % 12;
+  let minute = parseInt(mm, 10) || 0;
+  if (ampm.toUpperCase() === "PM") hour += 12;
   return hour * 60 + minute;
 }
 
-/** Convert an hour24 (0..23) into absolute minutes for that day. */
-function hour24ToAbsoluteMin(hour24) {
-  return hour24 * 60;
-}
-
-/** Format "19,30" => "7:30 PM", "0,0" => "12 AM" */
-function formatHalfHour(hour24, minute) {
-  // Convert 24-hr to 12-hr
-  let h12 = hour24 % 12;
-  if (h12 === 0) h12 = 12;
+/** Format hour24,minute => e.g. "9:30 PM" or "10 AM". */
+function formatSlot(hour24, minute) {
+  let h = hour24 % 12;
+  if (h === 0) h = 12;
   const ampm = hour24 < 12 ? "AM" : "PM";
-  if (minute === 0) {
-    return `${h12} ${ampm}`;
-  }
-  // e.g. "7:30 PM"
-  return `${h12}:${minute < 10 ? "0" : ""}${minute} ${ampm}`;
+  if (minute === 0) return `${h} ${ampm}`;
+  return `${h}:${minute < 10 ? "0" : ""}${minute} ${ampm}`;
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 12,
-    marginHorizontal: 0,
-  },
-  infoText: {
-    marginBottom: 6,
-    fontSize: 14,
+    marginVertical: 8,
   },
   roomTitle: {
-    fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 6,
-  },
-  rowContainer: {
-    flexDirection: "row",
+    marginBottom: 4,
   },
   slotCell: {
-    width: 65,
     height: 40,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 2,
   },
-  slotLabel: {
+  slotText: {
     color: "#fff",
     fontWeight: "600",
   },
