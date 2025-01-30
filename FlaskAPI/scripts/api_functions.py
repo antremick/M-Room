@@ -113,9 +113,6 @@ def push_to_api(url, payload):
             'Accept': 'application/json'
             }
             # Post the data as JSON (directly pass the dictionary, no need for json.dumps)
-            print("Posting to:")
-            print(url)
-            print(" ")
             response = requests.post(url, json=payload, headers=headers)
             
             # Check if the request was successful

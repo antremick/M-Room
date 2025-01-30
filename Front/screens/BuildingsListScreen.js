@@ -1,13 +1,9 @@
-// File: screens/BuildingsListScreen.js
 import React, { useEffect, useState } from "react";
-import { View, FlatList, StyleSheet } from "react-native";
+import { View, FlatList, StyleSheet, Text } from "react-native";
 import { ActivityIndicator, Searchbar, List } from "react-native-paper";
 import Fuse from "fuse.js";
 
-// Replace with the URL to your Flask endpoint for building data
 const BUILDINGS_URL = "https://mroom-api-c7aef75a74b0.herokuapp.com/buildings";
-// const BUILDINGS_URL = "http://127.0.0.1:5000/buildings";
-
 
 export default function BuildingsListScreen({ navigation }) {
   const [buildings, setBuildings] = useState([]);
@@ -25,7 +21,6 @@ export default function BuildingsListScreen({ navigation }) {
       const json = await response.json();
       setBuildings(json);
 
-      // Initialize Fuse.js once we have our building data
       const fuseInstance = new Fuse(json, {
         keys: ["name"],
         threshold: 0.3,
@@ -39,24 +34,19 @@ export default function BuildingsListScreen({ navigation }) {
     }
   }
 
-  // If there's no fuse instance or no search text, just show all buildings
   const displayedBuildings = (() => {
     if (!fuse || !searchText) return buildings;
-    // Perform a fuzzy search
     const results = fuse.search(searchText.trim());
-    // Extract the building items from Fuse results
     return results.map((r) => r.item);
   })();
 
   function onBuildingPress(building) {
-    // Navigate to RoomsListScreen and pass building info
     navigation.navigate("RoomsList", { building });
   }
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        {/* Paper's ActivityIndicator for a Material look */}
         <ActivityIndicator animating={true} size="large" />
       </View>
     );
@@ -64,12 +54,14 @@ export default function BuildingsListScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Paper's Searchbar instead of a regular TextInput */}
+      <Text style={styles.headerText}>Tap on a Building to see rooms</Text>
+
       <Searchbar
         placeholder="Search buildings..."
         onChangeText={setSearchText}
         value={searchText}
         style={styles.searchbar}
+        inputStyle={styles.searchbarInput}
       />
 
       <FlatList
@@ -78,10 +70,7 @@ export default function BuildingsListScreen({ navigation }) {
         renderItem={({ item }) => (
           <List.Item
             title={item.name}
-            // Optional: subtitle or description
-            description="Tap to see rooms"
             onPress={() => onBuildingPress(item)}
-            // Add left icon if you want
             left={(props) => <List.Icon {...props} icon="office-building" />}
           />
         )}
@@ -95,6 +84,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 15,
+    marginBottom: 10,
+    color: "#333",
+  },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
@@ -103,11 +99,24 @@ const styles = StyleSheet.create({
   searchbar: {
     margin: 10,
     marginBottom: 10,
-    backgroundColor: "#91BAD6", // University of Michigan blue
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    elevation: 3, // Android shadow
+    shadowColor: "#000", // iOS shadow
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  searchbarInput: {
+    fontSize: 16,
   },
   separator: {
     height: 1,
     backgroundColor: "#ccc",
-    marginLeft: 72, // space for left icon
+    marginLeft: 15, // Removed the left margin so line extends fully
+    marginRight: 15,
   },
 });

@@ -6,7 +6,7 @@ import { Button } from "react-native-paper";
 export default function WelcomeScreen({ navigation }) {
   // Example next screen could be the main Buildings list
   function handleGetStarted() {
-    navigation.navigate("BuildingsList");
+    navigation.navigate("MainApp");
   }
 
   return (
@@ -21,7 +21,8 @@ export default function WelcomeScreen({ navigation }) {
       {/* App Description */}
       <Text style={styles.description}>
         Welcome to MRoom! {"\n\n"}
-        MRoom helps you find open classrooms in your favorite buildings around campus.  {"\n\n"} Find study spots easy with MRoom!
+        MRoom helps you find open classrooms in your favorite buildings around
+        campus. {"\n\n"} Find study spots easy with MRoom!
       </Text>
 
       {/* “Get Started” Button */}
@@ -36,7 +37,6 @@ export default function WelcomeScreen({ navigation }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -59,6 +59,7 @@ const styles = StyleSheet.create({
   button: {
     width: 200,
     borderRadius: 6,
+    backgroundColor: "#00274C", // Added U-M blue color
   },
   buttonLabel: {
     fontWeight: "bold",

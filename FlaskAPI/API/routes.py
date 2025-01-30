@@ -4,6 +4,7 @@ from API import app
 from API.db_setup import get_or_create_building, insert_room, create_tables
 from API.model import get_db
 import json
+import psycopg2
 
 @app.route("/")
 def index():
@@ -30,21 +31,23 @@ def import_data():
         if not data:
             return flask.jsonify({"error": "No JSON payload received"}), 400
 
-        # Load the JSON dictionary from a local file (if you truly want this in production)
-        with open('scripts/buildings.json', 'r') as json_file:
+        # Load the JSON dictionary from a local file (if you truly want this in production) (why is this in here)
+        with open('scripts/buildings.json', 'r', encoding='utf-8') as json_file:
             building_data = json.load(json_file)
 
         # data should be a list of dictionaries
         for item in data:
-            if item["BuildingID"] in building_data:
-                building_name = building_data[item["BuildingID"]]
+            if item["full_name"] in building_data:
+                full_name = item["full_name"]
+                short_name = item["short_name"]
             else:
-                building_name = item["BldDescrShort"]
+                full_name = item["BldDescrShort"]
+                short_name = ""
             room_num = item["FacilityID"]
             meetings = item.get("Meetings", [])
 
             # Ensure building exists
-            building_id = get_or_create_building(building_name)
+            building_id = get_or_create_building(full_name, short_name)
 
             # Insert the room
             insert_room(room_num, building_id, meetings)
@@ -53,8 +56,10 @@ def import_data():
 
     except KeyError as e:
         return flask.jsonify({"error": f"Missing key: {str(e)}"}), 400
-    except Exception as e:
+    except (json.JSONDecodeError, IOError) as e:
         return flask.jsonify({"error": str(e)}), 500
+    except psycopg2.Error as e:
+        return flask.jsonify({"error": "Database error: " + str(e)}), 500
 
 @app.route("/buildings", methods=["GET"])
 def get_buildings():
@@ -68,7 +73,7 @@ def get_buildings():
     """
     conn = get_db()
     with conn.cursor() as cursor:
-        cursor.execute("SELECT id, name FROM building ORDER BY id")
+        cursor.execute("SELECT id, name, shortname FROM building ORDER BY id")
         rows = cursor.fetchall()
 
     # rows is a list of dicts if you used DictCursor

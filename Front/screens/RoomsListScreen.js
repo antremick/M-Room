@@ -1,19 +1,14 @@
-// File: screens/RoomsListScreen.js
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, FlatList } from "react-native";
 import { ActivityIndicator, Text, Card, Searchbar } from "react-native-paper";
 import AvailabilityBar from "./AvailabilityBar";
 
-// const ROOMS_URL = "https://gaoiuxwhjh.execute-api.us-east-2.amazonaws.com/dev/rooms";
 const ROOMS_URL = "https://mroom-api-c7aef75a74b0.herokuapp.com/rooms";
 
 export default function RoomsListScreen({ route }) {
   const { building } = route.params;
-
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // State for search text
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -24,7 +19,6 @@ export default function RoomsListScreen({ route }) {
     try {
       const response = await fetch(ROOMS_URL);
       const data = await response.json();
-      // Filter only rooms for this building
       const buildingRooms = data.filter(
         (room) => room.building_id === building.id
       );
@@ -36,7 +30,6 @@ export default function RoomsListScreen({ route }) {
     }
   }
 
-  // If still loading from the API
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -45,7 +38,6 @@ export default function RoomsListScreen({ route }) {
     );
   }
 
-  // If no rooms at all for this building
   if (rooms.length === 0) {
     return (
       <View style={styles.loadingContainer}>
@@ -54,39 +46,34 @@ export default function RoomsListScreen({ route }) {
     );
   }
 
-  // Derive displayed rooms based on search
   const displayedRooms = rooms.filter((r) =>
-    r.roomNum.toLowerCase().includes(searchQuery.toLowerCase())
+    r.roomnum.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  // If displayedRooms is empty, user typed something that doesn't match any room
-  // You can optionally show a small message or just show an empty list
 
   return (
     <View style={styles.container}>
-      {/* Explanation message */}
-      <Text style={styles.infoText}>
+      <Text style={styles.headerText}>
         Times in <Text style={{ color: "red", fontWeight: "bold" }}>red</Text>{" "}
-        indicate a meeting starts at that half-hour.
+        indicate a room is busy for the next 30 minutes.
       </Text>
 
-      {/* Searchbar from React Native Paper */}
       <Searchbar
         placeholder="Search rooms..."
         onChangeText={(text) => setSearchQuery(text)}
         value={searchQuery}
         style={styles.searchbar}
+        inputStyle={styles.searchbarInput}
       />
 
-      {/* Render a filtered list of rooms */}
       <FlatList
         data={displayedRooms}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <Card style={styles.card}>
-            <Card.Title title={item.roomNum} titleStyle={styles.cardTitle} />
+            <Card.Title title={item.roomnum} titleStyle={styles.cardTitle} />
             <Card.Content>
+              <Text style={styles.availabilityLabel}>Availability:</Text>
               <AvailabilityBar room={item} />
             </Card.Content>
           </Card>
@@ -102,10 +89,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  infoText: {
-    marginBottom: 6,
-    marginHorizontal: 8,
-    fontSize: 14,
+  headerText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 15,
+    marginBottom: 10,
+    color: "#333",
   },
   container: {
     flex: 1,
@@ -115,16 +104,31 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   searchbar: {
+    margin: 10,
     marginBottom: 10,
-    backgroundColor: "#91BAD6", // University of Michigan blue
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    elevation: 3, // Android shadow
+    shadowColor: "#000", // iOS shadow
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
-    searchInput: {
-    color: 'white', // Ensure text color is white
+  searchbarInput: {
+    fontSize: 16,
   },
   card: {
     marginBottom: 10,
   },
   cardTitle: {
     fontWeight: "bold",
+  },
+  availabilityLabel: {
+    fontSize: 16,
+    color: "black",
+    marginBottom: -16,
   },
 });
