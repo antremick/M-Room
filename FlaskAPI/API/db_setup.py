@@ -13,7 +13,7 @@ def create_tables():
             CREATE TABLE IF NOT EXISTS building (
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
-                shortname VARCHAR(255) NOT NULL
+                short_name VARCHAR(255) NOT NULL
             )
         """)
 
@@ -29,20 +29,20 @@ def create_tables():
         """)
     conn.commit()
 
-def insert_building(name, shortname):
+def insert_building(name, short_name):
     """
     Insert a new Building record in Postgres and return its generated ID.
     """
     conn = get_db()
     with conn.cursor() as cursor:
         # Use RETURNING id to get the auto-generated primary key
-        sql = "INSERT INTO building (name, shortname) VALUES (%s, %s) RETURNING id"
-        cursor.execute(sql, (name, shortname))
+        sql = "INSERT INTO building (name, short_name) VALUES (%s, %s) RETURNING id"
+        cursor.execute(sql, (name, short_name))
         row = cursor.fetchone()
     conn.commit()
     return row["id"]  # if using a DictCursor, else row[0]
 
-def get_or_create_building(name, shortname):
+def get_or_create_building(name, short_name):
     """
     Returns the ID of the building with `name`.
     If it doesn't exist, creates it.
@@ -51,7 +51,7 @@ def get_or_create_building(name, shortname):
     with conn.cursor() as cursor:
         # Try to find an existing record
         sql = "SELECT id FROM building WHERE name = %s"
-        cursor.execute(sql, (name,shortname))
+        cursor.execute(sql, (name, short_name))
         row = cursor.fetchone()
 
         if row is not None:
@@ -59,7 +59,7 @@ def get_or_create_building(name, shortname):
             return row["id"]
         else:
             # Need to create new building
-            return insert_building(name, shortname)
+            return insert_building(name, short_name)
 
 def insert_room(room_num, building_id, meetings=None):
     """
