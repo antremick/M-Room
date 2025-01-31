@@ -36,18 +36,20 @@ def import_data():
             building_data = json.load(json_file)
 
         # data should be a list of dictionaries
+        # data should be a list of dictionaries
         for item in data:
-            if item["full_name"] in building_data:
-                full_name = item["full_name"]
-                short_name = item["short_name"]
+            if item["BuildingID"] in building_data:
+                long_name = building_data[item["BuildingID"]]["long_name"]
+                short_name = building_data[item["BuildingID"]]["short_name"]
             else:
-                full_name = item["BldDescrShort"]
+                long_name = item["BldDescrShort"]
                 short_name = ""
+
             room_num = item["FacilityID"]
             meetings = item.get("Meetings", [])
 
             # Ensure building exists
-            building_id = get_or_create_building(full_name, short_name)
+            building_id = get_or_create_building(long_name, short_name)
 
             # Insert the room
             insert_room(room_num, building_id, meetings)
@@ -121,4 +123,5 @@ def get_rooms():
             row_dict["meetings"] = []
         rooms_list.append(row_dict)
 
+    return flask.jsonify(rooms_list), 200
     return flask.jsonify(rooms_list), 200

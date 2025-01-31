@@ -4,8 +4,8 @@ curl -X POST \
   -H "Content-Type: application/json" \
   -d '[
     {
-      "full_name": "Building Name",
-      "short_name": "BLDG",
+      "BldDescrShort": "Building Name",
+      "shortname": "BLDG",
       "FacilityID": "BLDG101",
       "Meetings": [
         {
