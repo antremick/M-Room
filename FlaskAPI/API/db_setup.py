@@ -13,7 +13,7 @@ def create_tables():
             CREATE TABLE IF NOT EXISTS building (
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
-                shortname VARCHAR(255) NOT NULL, 
+                shortname VARCHAR(255) NOT NULL
             )
         """)
 

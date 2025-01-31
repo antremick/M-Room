@@ -69,7 +69,11 @@ export default function BuildingsListScreen({ navigation }) {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <List.Item
-            title={item.name}
+            title={
+              item.shortname && item.shortname !== ""
+                ? `(${item.shortname}) ${item.name}`
+                : item.name
+            }
             onPress={() => onBuildingPress(item)}
             left={(props) => <List.Icon {...props} icon="office-building" />}
           />

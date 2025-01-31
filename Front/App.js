@@ -53,7 +53,7 @@ function HomeStack() {
         options={({ route }) => ({
           header: () => (
             <CustomHeader
-              title={`${route.params.building.name}`}
+              title={`${route.params.building.shortname}`}
               size="small"
             />
           ),
