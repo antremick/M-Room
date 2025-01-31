@@ -39,17 +39,17 @@ def import_data():
         # data should be a list of dictionaries
         for item in data:
             if item["BuildingID"] in building_data:
-                long_name = building_data[item["BuildingID"]]["long_name"]
+                full_name = building_data[item["BuildingID"]]["full_name"]
                 short_name = building_data[item["BuildingID"]]["short_name"]
             else:
-                long_name = item["BldDescrShort"]
+                full_name = item["BldDescrShort"]
                 short_name = ""
 
             room_num = item["FacilityID"]
             meetings = item.get("Meetings", [])
 
             # Ensure building exists
-            building_id = get_or_create_building(long_name, short_name)
+            building_id = get_or_create_building(full_name, short_name)
 
             # Insert the room
             insert_room(room_num, building_id, meetings)

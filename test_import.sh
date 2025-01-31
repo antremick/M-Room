@@ -6,6 +6,7 @@ curl -X POST \
     {
       "BldDescrShort": "Building Name",
       "shortname": "BLDG",
+      "BuildingID": "BLDG101",
       "FacilityID": "BLDG101",
       "Meetings": [
         {
