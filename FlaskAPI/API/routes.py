@@ -75,7 +75,7 @@ def get_buildings():
     """
     conn = get_db()
     with conn.cursor() as cursor:
-        cursor.execute("SELECT id, name, shortname FROM building ORDER BY id")
+        cursor.execute("SELECT id, name, short_name FROM building ORDER BY id")
         rows = cursor.fetchall()
 
     # rows is a list of dicts if you used DictCursor
