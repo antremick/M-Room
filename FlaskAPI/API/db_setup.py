@@ -33,6 +33,13 @@ def insert_building(name, short_name):
     """
     Insert a new Building record in Postgres and return its generated ID.
     """
+    if not isinstance(short_name, str):
+        raise TypeError("short_name must be a string")
+
+    # Ensure short_name is within the 255 character limit
+    if len(short_name) > 255:
+        raise ValueError("short_name exceeds the maximum length of 255 characters")
+    
     conn = get_db()
     with conn.cursor() as cursor:
         # Use RETURNING id to get the auto-generated primary key
