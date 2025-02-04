@@ -47,7 +47,8 @@ def import_data():
 
             room_num = item["FacilityID"]
             meetings = item.get("Meetings", [])
-
+            
+            print(f"full_name: {full_name}, short_name: {short_name}")
             # Ensure building exists
             building_id = get_or_create_building(full_name, short_name)
 
