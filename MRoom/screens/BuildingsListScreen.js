@@ -22,7 +22,7 @@ export default function BuildingsListScreen({ navigation }) {
       setBuildings(json);
 
       const fuseInstance = new Fuse(json, {
-        keys: ["name"],
+        keys: ["name", "short_name"],
         threshold: 0.3,
         minMatchCharLength: 2,
       });
@@ -70,12 +70,11 @@ export default function BuildingsListScreen({ navigation }) {
         renderItem={({ item }) => (
           <List.Item
             title={
-              item.shortname && item.shortname !== ""
-                ? `(${item.shortname}) ${item.name}`
+              item.short_name && item.short_name !== ""
+                ? `(${item.short_name}) ${item.name}`
                 : item.name
             }
             onPress={() => onBuildingPress(item)}
-            left={(props) => <List.Icon {...props} icon="office-building" />}
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
