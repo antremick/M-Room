@@ -48,3 +48,28 @@ buildings:
 
 logs-heroku:
 	heroku logs --app mroom-api --tail --source app
+
+shell-heroku:
+	heroku run bash --app mroom-api
+
+db-heroku:
+	heroku pg:psql --app mroom-api
+
+# ... existing code ...
+
+APP_NAME = $(shell echo ${HOST} | cut -d'.' -f1)
+
+# Show table structure. Usage: make describe-table TABLE=table_name
+describe-table:
+	@if [ -z "$(TABLE)" ]; then \
+		echo "Error: Please specify a table name using TABLE=table_name"; \
+		echo "Example: make describe-table TABLE=users"; \
+		exit 1; \
+	fi
+	heroku pg:psql --app mroom-api -c "\d $(TABLE)"
+
+upload-building:
+	curl -v -X POST http://${HOST}/buildings \
+		-H "Content-Type: application/json" \
+		-H "Accept: application/json" \
+		-d '{"name": "Test Building", "short_name": "TEST"}'

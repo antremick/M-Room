@@ -51,7 +51,7 @@ def get_or_create_building(name, short_name):
     with conn.cursor() as cursor:
         # Try to find an existing record
         sql = "SELECT id FROM building WHERE name = %s"
-        cursor.execute(sql, (name, short_name))
+        cursor.execute(sql, (name))
         row = cursor.fetchone()
 
         if row is not None:
