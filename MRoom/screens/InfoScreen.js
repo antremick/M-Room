@@ -16,7 +16,7 @@ export default function InfoScreen() {
         campus. New features including location services, table finders, Rick's
         line skips, and more coming soon!
         {"\n\n"}
-        Happy to take any inquiries, feedback, or feedback at{" "}
+        Happy to take any inquiries, feedback, or suggestions at {" "}
         <Text
           style={{ color: "#00274C", textDecorationLine: "underline" }}
           onPress={() => Linking.openURL("mailto:remickar@umich.edu")}
