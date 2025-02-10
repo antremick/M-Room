@@ -14,17 +14,30 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mroom.mroom"
+      "bundleIdentifier": "com.mroom.mroom",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app needs access to location to show your position on the map.",
+        "NSLocationAlwaysUsageDescription": "This app needs access to location to show your position on the map."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.mroom.mroom"
+      "package": "com.mroom.mroom",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow MRoom to use your location."
+        }
+      ]
+    ]
   }
 }

@@ -1,62 +1,112 @@
-import React from "react";
-import { StyleSheet, View } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, Dimensions, Alert } from "react-native";
 import MapView, { Marker } from "react-native-maps";
+import * as Location from "expo-location";
 
 const BuildingsMapScreen = () => {
-  // define a region to display initially (e.g., focus on the first building)
-  const initialRegion = {
-    latitude: 40.7128, // choose a default lat
-    longitude: -74.006, // choose a default lon
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
+  const [location, setLocation] = useState(null);
+  const [buildings, setBuildings] = useState([]); // Will be populated from your API
+
+  // Dummy building - Michigan Union
+  const dummyBuilding = {
+    id: 1,
+    name: "Michigan Union",
+    coordinate: {
+      latitude: 42.274475,
+      longitude: -83.742195,
+    },
+    description: "Student Union Building",
   };
 
-  const buildings = [
-    {
-      id: 1,
-      name: "Building A",
-      address: "123 Main St, Anytown, USA",
-      latitude: 40.7128,
-      longitude: -74.006,
-    },
-    {
-      id: 2,
-      name: "Building B",
-      address: "456 Oak Ave, Somecity, USA",
-      latitude: 34.0522,
-      longitude: -118.2437,
-    },
-  ];
+  useEffect(() => {
+    let locationSubscription;
+
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission denied",
+          "Location permission is required to center the map."
+        );
+        return;
+      }
+
+      try {
+        // Get initial location
+        let currentLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+          maximumAge: 10000,
+        });
+        setLocation(currentLocation);
+
+        // Subscribe to location updates
+        locationSubscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 10000,
+            distanceInterval: 10,
+          },
+          (newLocation) => {
+            setLocation(newLocation);
+          }
+        );
+      } catch (error) {
+        Alert.alert("Error", "Could not fetch location.");
+      }
+    })();
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (locationSubscription) {
+        locationSubscription.remove();
+      }
+    };
+  }, []);
 
   return (
     <View style={styles.container}>
-      <MapView style={styles.map} initialRegion={initialRegion}>
-        {buildings.map((building) => (
-          <Marker
-            key={building.id}
-            coordinate={{
-              latitude: building.latitude,
-              longitude: building.longitude,
-            }}
-            title={building.name}
-            description={building.address}
-            // (Optional) Add custom marker or info window styling
-            // image={require('path/to/custom-marker.png')}
-            // onCalloutPress={() => // navigate or open details}
-          />
-        ))}
+      <MapView
+        style={styles.map}
+        showsUserLocation={true}
+        followsUserLocation={true}
+        showsMyLocationButton={true}
+        initialRegion={
+          location
+            ? {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              }
+            : {
+                // Default to Michigan Union area if location not available
+                latitude: 42.274475,
+                longitude: -83.742195,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              }
+        }
+      >
+        {/* Show dummy building */}
+        <Marker
+          coordinate={dummyBuilding.coordinate}
+          title={dummyBuilding.name}
+          description={dummyBuilding.description}
+        />
       </MapView>
     </View>
   );
 };
 
-export default BuildingsMapScreen;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
   },
   map: {
-    ...StyleSheet.absoluteFillObject,
+    width: Dimensions.get("window").width,
+    height: Dimensions.get("window").height,
   },
 });
+
+export default BuildingsMapScreen;

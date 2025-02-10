@@ -1,19 +1,52 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { View, StyleSheet, FlatList } from "react-native";
-import { ActivityIndicator, Text, Card, Searchbar } from "react-native-paper";
+import {
+  ActivityIndicator,
+  Text,
+  Card,
+  Searchbar,
+  SegmentedButtons,
+  IconButton,
+} from "react-native-paper";
 import AvailabilityBar from "./AvailabilityBar";
+import { AuthContext } from "../contexts/AuthContext";
 
 const ROOMS_URL = "https://mroom-api-c7aef75a74b0.herokuapp.com/rooms";
+const FAVORITES_URL =
+  "https://mroom-api-c7aef75a74b0.herokuapp.com/favorites/rooms";
 
 export default function RoomsListScreen({ route }) {
   const { building } = route.params;
   const [rooms, setRooms] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFloor, setSelectedFloor] = useState("all");
+  const { user } = useContext(AuthContext);
+
+  // Extract floor number from room number (e.g., "1100" -> "1")
+  const getFloorNumber = (roomNum) => {
+    const match = roomNum.match(/^\d/);
+    return match ? match[0] : null;
+  };
+
+  // Get unique floor numbers from rooms
+  const getFloorOptions = () => {
+    const floors = new Set(
+      rooms.map((room) => getFloorNumber(room.roomnum)).filter(Boolean)
+    );
+    return ["all", ...Array.from(floors)].map((floor) => ({
+      value: floor,
+      label: floor === "all" ? "All Floors" : `Floor ${floor}`,
+    }));
+  };
 
   useEffect(() => {
     fetchRooms();
-  }, []);
+    if (user) {
+      fetchFavorites();
+    }
+  }, [user]);
 
   async function fetchRooms() {
     try {
@@ -29,6 +62,57 @@ export default function RoomsListScreen({ route }) {
       setLoading(false);
     }
   }
+
+  async function fetchFavorites() {
+    try {
+      const response = await fetch(FAVORITES_URL, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+      const json = await response.json();
+      setFavorites(json.map((r) => r.id));
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+    }
+  }
+
+  async function toggleFavorite(roomId) {
+    if (!user) return;
+
+    try {
+      if (favorites.includes(roomId)) {
+        await fetch(`${FAVORITES_URL}/${roomId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        });
+        setFavorites(favorites.filter((id) => id !== roomId));
+      } else {
+        await fetch(FAVORITES_URL, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ room_id: roomId }),
+        });
+        setFavorites([...favorites, roomId]);
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    }
+  }
+
+  const displayedRooms = rooms.filter((r) => {
+    const matchesSearch = r.roomnum
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesFloor =
+      selectedFloor === "all" || getFloorNumber(r.roomnum) === selectedFloor;
+    return matchesSearch && matchesFloor;
+  });
 
   if (loading) {
     return (
@@ -46,10 +130,6 @@ export default function RoomsListScreen({ route }) {
     );
   }
 
-  const displayedRooms = rooms.filter((r) =>
-    r.roomnum.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
     <View style={styles.container}>
       <Text style={styles.headerText}>
@@ -65,13 +145,31 @@ export default function RoomsListScreen({ route }) {
         inputStyle={styles.searchbarInput}
       />
 
+      <SegmentedButtons
+        value={selectedFloor}
+        onValueChange={setSelectedFloor}
+        buttons={getFloorOptions()}
+        style={styles.floorPicker}
+      />
+
       <FlatList
         data={displayedRooms}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <Card style={styles.card}>
-            <Card.Title title={item.roomnum} titleStyle={styles.cardTitle} />
+            <Card.Title
+              title={item.roomnum}
+              titleStyle={styles.cardTitle}
+              right={(props) => (
+                <IconButton
+                  {...props}
+                  icon={favorites.includes(item.id) ? "heart" : "heart-outline"}
+                  onPress={() => toggleFavorite(item.id)}
+                  disabled={!user}
+                />
+              )}
+            />
             <Card.Content>
               <Text style={styles.availabilityLabel}>Availability:</Text>
               <AvailabilityBar room={item} />
@@ -130,5 +228,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "black",
     marginBottom: -16,
+  },
+  floorPicker: {
+    marginHorizontal: 10,
+    marginBottom: 10,
   },
 });

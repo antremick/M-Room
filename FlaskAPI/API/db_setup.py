@@ -1,6 +1,7 @@
 # File: API/db_setup.py
 import json
 from API.model import get_db
+from werkzeug.security import generate_password_hash, check_password_hash
 
 def create_tables():
     """
@@ -25,6 +26,37 @@ def create_tables():
                 building_id INT NOT NULL,
                 meetings TEXT,
                 FOREIGN KEY (building_id) REFERENCES building(id) ON DELETE CASCADE
+            )
+        """)
+
+        # Create users table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # Create favorites tables
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS favorite_buildings (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id),
+                building_id INTEGER REFERENCES building(id),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, building_id)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS favorite_rooms (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id),
+                room_id INTEGER REFERENCES room(id),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, room_id)
             )
         """)
     conn.commit()
@@ -86,3 +118,42 @@ def insert_room(room_num, building_id, meetings=None):
         row = cursor.fetchone()
     conn.commit()
     return row["id"]
+
+def init_db():
+    """Create database tables"""
+    conn = get_db()
+    with conn.cursor() as cur:
+        # Existing tables...
+
+        # Create users table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # Create favorites tables
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS favorite_buildings (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id),
+                building_id INTEGER REFERENCES building(id),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, building_id)
+            )
+        """)
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS favorite_rooms (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id),
+                room_id INTEGER REFERENCES room(id),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, room_id)
+            )
+        """)
+    
+    conn.commit()

@@ -1,19 +1,32 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { View, FlatList, StyleSheet, Text } from "react-native";
-import { ActivityIndicator, Searchbar, List } from "react-native-paper";
+import {
+  ActivityIndicator,
+  Searchbar,
+  List,
+  IconButton,
+} from "react-native-paper";
 import Fuse from "fuse.js";
+import { AuthContext } from "../contexts/AuthContext";
 
 const BUILDINGS_URL = "https://mroom-api-c7aef75a74b0.herokuapp.com/buildings";
+const FAVORITES_URL =
+  "https://mroom-api-c7aef75a74b0.herokuapp.com/favorites/buildings";
 
 export default function BuildingsListScreen({ navigation }) {
   const [buildings, setBuildings] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
   const [fuse, setFuse] = useState(null);
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     fetchBuildings();
-  }, []);
+    if (user) {
+      fetchFavorites();
+    }
+  }, [user]);
 
   async function fetchBuildings() {
     try {
@@ -31,6 +44,53 @@ export default function BuildingsListScreen({ navigation }) {
       console.error("Error fetching buildings:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchFavorites() {
+    try {
+      const response = await fetch(FAVORITES_URL, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+      const json = await response.json();
+      setFavorites(json.map((b) => b.id));
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+    }
+  }
+
+  async function toggleFavorite(buildingId) {
+    if (!user) {
+      // Optionally show a message prompting user to log in
+      return;
+    }
+
+    try {
+      if (favorites.includes(buildingId)) {
+        // Unfavorite
+        await fetch(`${FAVORITES_URL}/${buildingId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        });
+        setFavorites(favorites.filter((id) => id !== buildingId));
+      } else {
+        // Favorite
+        await fetch(FAVORITES_URL, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ building_id: buildingId }),
+        });
+        setFavorites([...favorites, buildingId]);
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
     }
   }
 
@@ -75,6 +135,13 @@ export default function BuildingsListScreen({ navigation }) {
                 : item.name
             }
             onPress={() => onBuildingPress(item)}
+            right={() => (
+              <IconButton
+                icon={favorites.includes(item.id) ? "heart" : "heart-outline"}
+                onPress={() => toggleFavorite(item.id)}
+                disabled={!user}
+              />
+            )}
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
