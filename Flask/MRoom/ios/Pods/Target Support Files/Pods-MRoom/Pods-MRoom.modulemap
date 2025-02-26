@@ -1,0 +1,6 @@
+module Pods_MRoom {
+  umbrella header "Pods-MRoom-umbrella.h"
+
+  export *
+  module * { export * }
+}
