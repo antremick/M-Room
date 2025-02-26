@@ -49,6 +49,9 @@ ios:
 buildings:
 	curl -v -X GET http://${HOST}/buildings || true
 
+rooms:
+	curl -v -X GET http://${HOST}/rooms || true
+
 logs-heroku:
 	heroku logs --app mroom-api --tail --source app
 

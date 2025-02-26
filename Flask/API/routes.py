@@ -50,7 +50,7 @@ def import_data():
         # data should be a list of dictionaries
         for item in data:
             #set fullname and shortname
-            if item["long_name"]:
+            if "long_name" not in item.keys():
                 long_name = item["long_name"]
 
             else:
