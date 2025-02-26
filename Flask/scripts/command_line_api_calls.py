@@ -7,7 +7,7 @@ import json
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Now import api_functions
-import api_functions
+import Flask.API.api_functions as api_functions
 from pprint import pprint 
 import requests
 

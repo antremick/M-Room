@@ -28,8 +28,17 @@ for _, row in data.iterrows():
         'short_name': row['Building Name - Short']
     }
 
-# Save the extracted data to a JSON file
-json_file_path = os.path.join(script_dir, 'buildings.json')
+# Create absolute path to the API directory (one level up and into API)
+api_dir = os.path.join(os.path.dirname(script_dir), 'API')
+
+# Ensure the API directory exists
+if not os.path.exists(api_dir):
+    print(f"Warning: API directory not found at {api_dir}")
+    print("Creating API directory...")
+    os.makedirs(api_dir)
+
+# Save the extracted data to a JSON file in the API directory
+json_file_path = os.path.join(api_dir, 'buildings_import.json')
 with open(json_file_path, 'w') as json_file:
     json.dump(building_dict, json_file, indent=4)
 

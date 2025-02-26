@@ -12,7 +12,7 @@ HOST ?= mroom-api-c7aef75a74b0.herokuapp.com
 
 # Deploy to Heroku
 heroku:
-	git subtree push --prefix $(APP_DIR) heroku main
+	git subtree push --prefix $(APP_DIcR) heroku main
 
 # Quick git commands
 git:

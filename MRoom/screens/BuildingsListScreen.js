@@ -9,9 +9,12 @@ import {
 import Fuse from "fuse.js";
 import { AuthContext } from "../contexts/AuthContext";
 
-const BUILDINGS_URL = "https://mroom-api-c7aef75a74b0.herokuapp.com/buildings";
-const FAVORITES_URL =
-  "https://mroom-api-c7aef75a74b0.herokuapp.com/favorites/buildings";
+//production
+// const BUILDINGS_URL = "https://mroom-api-c7aef75a74b0.herokuapp.com/buildings";
+
+//staging
+const BUILDINGS_URL = "https://mroom-staging-031597615ed8.herokuapp.com/buildings";
+const FAVORITES_URL = "https://mroom-api-c7aef75a74b0.herokuapp.com/favorites/buildings";
 
 export default function BuildingsListScreen({ navigation }) {
   const [buildings, setBuildings] = useState([]);

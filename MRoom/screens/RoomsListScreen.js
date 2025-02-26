@@ -12,8 +12,7 @@ import AvailabilityBar from "./AvailabilityBar";
 import { AuthContext } from "../contexts/AuthContext";
 
 const ROOMS_URL = "https://mroom-api-c7aef75a74b0.herokuapp.com/rooms";
-const FAVORITES_URL =
-  "https://mroom-api-c7aef75a74b0.herokuapp.com/favorites/rooms";
+const FAVORITES_URL = "https://mroom-api-c7aef75a74b0.herokuapp.com/favorites/rooms";
 
 export default function RoomsListScreen({ route }) {
   const { building } = route.params;
