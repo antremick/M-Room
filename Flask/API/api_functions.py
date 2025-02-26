@@ -3,35 +3,36 @@ from pprint import pprint
 import requests
 import json
 from datetime import date 
+import base64
+import sys
 
 # Your public and private API keys
 def generate_token(public_key, private_key, scope):
-    """Generate a Auth Token."""
-    # API endpoint and headers
-    token_url = 'https://gw.api.it.umich.edu/um/oauth2/token'
-    token_headers = {
-        'Content-Type': 'application/x-www-form-urlencoded'
-    }
-    # API payload with your credentials and scope
+    """Generate an OAuth token for API access"""
+    token_url = "https://gw.api.it.umich.edu/um/oauth2/token"
     token_data = {
-        'grant_type': 'client_credentials',
-        'client_id': public_key,  
-        'client_secret': private_key,  
-        'scope': scope 
+        "grant_type": "client_credentials",
+        "scope": scope
     }
-    # Perform the POST request
-    response = requests.post(token_url, headers=token_headers, data=token_data, timeout=30)
-
-    # Check if the request was successful
-    if response.ok:
-        # If response is OK, print the content
-        print("Access token Acquired")
-        response_dict = response.json()
-        access_token = response_dict["access_token"]
-        return {"Authorization": f"Bearer {access_token}"}
-    else:
-        # If the request failed, print the status code and error message
-        print(f"Request failed with status code {response.status_code}: {response.text}")
+    token_headers = {
+        "Authorization": f"Basic {base64.b64encode(f'{public_key}:{private_key}'.encode()).decode()}"
+    }
+    
+    try:
+        response = requests.post(token_url, headers=token_headers, data=token_data, timeout=30)
+        response.raise_for_status()
+        token = response.json()["access_token"]
+        return {"Authorization": f"Bearer {token}"}
+    except requests.exceptions.ConnectionError:
+        print("\nERROR: Cannot connect to UMich API.")
+        print("Make sure you are:")
+        print("1. Connected to the internet")
+        print("2. On the UMich network or VPN")
+        print("3. Have valid API credentials in your .env file")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nError generating token: {str(e)}")
+        sys.exit(1)
 
 
 BASE_URL = "https://gw.api.it.umich.edu/um/aa/ClassroomList/v2"

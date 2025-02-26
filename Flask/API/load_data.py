@@ -11,11 +11,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import api_functions
 import requests
+import argparse
 
 class DataLoader:
     """Class for handling classroom data loading and processing"""
     
-    def __init__(self):
+    def __init__(self, dev_mode=False):
         """Initialize DataLoader with default endpoints and API URL"""
         self.endpoints = [
             "/Classrooms",
@@ -24,6 +25,11 @@ class DataLoader:
             "/Classrooms/{RoomID}/Contacts",
             "/Classrooms/{RoomID}/Meetings"
         ]
+        
+        # Development mode buildings (common buildings at UMich)
+        self.dev_buildings = ['CCCB', 'UMMA', 'UNION', 'CHEM', 'MASON']
+        self.dev_mode = dev_mode
+        
         load_dotenv()
         if os.getenv('ENV') == "staging":
             self.api_url = os.getenv('API_STAGING') + "/import_data"
@@ -132,25 +138,30 @@ class DataLoader:
                 print(f"Error fetching building data for ID {room['BuildingID']}: {str(e)}")
 
     def process_classrooms(self, classrooms, date):
-        """Process classroom data with meetings and building information
-        
-        Args:
-            classrooms (list): List of classrooms
-            date (dict): Date range for meetings
+        """Process classroom data with meetings and building information"""
+        if self.dev_mode:
+            # Filter classrooms to only include dev buildings using BldDescrShort
+            classrooms = [room for room in classrooms 
+                         if room.get("BldDescrShort") in self.dev_buildings]
+            print(f"\nDEV MODE: Processing {len(classrooms)} classrooms from {len(self.dev_buildings)} buildings")
             
-        Returns:
-            list: Processed classroom data
-        """
-        print(f"\nProcessing {len(classrooms)} classrooms..")
+            # Debug print to see what we're getting
+            building_counts = {}
+            for room in classrooms:
+                bldg = room.get("BldDescrShort")
+                building_counts[bldg] = building_counts.get(bldg, 0) + 1
+            print("Rooms per building:", building_counts)
+        else:
+            print(f"\nProcessing {len(classrooms)} classrooms..")
         
         for room in classrooms:
             # Extract short name by removing trailing numbers
             room["short_name"] = ''.join(c for c in room["FacilityID"] if not c.isdigit())
-
+            
             self.buildings_api_call(room)
             room["Meetings"] = self._get_meetings_for_room(room["FacilityID"], date)
         
-        print(f"\nFinished processing all {len(classrooms)} classrooms")
+        print(f"\nFinished processing {len(classrooms)} classrooms")
         return classrooms
 
     def run(self):
@@ -183,7 +194,15 @@ class DataLoader:
 
 def main():
     """Main function to initialize and run the DataLoader"""
-    loader = DataLoader()
+    parser = argparse.ArgumentParser(description='Load classroom data')
+    parser.add_argument('--dev', action='store_true', 
+                       help='Run in development mode with limited buildings')
+    args = parser.parse_args()
+    
+    if args.dev:
+        print("Running in development mode with limited buildings")
+    
+    loader = DataLoader(dev_mode=args.dev)
     loader.run()
 
 if __name__ == "__main__":
