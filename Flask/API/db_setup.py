@@ -3,14 +3,31 @@ import os
 import json
 from API.model import get_db
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv, find_dotenv
 
 
 def get_table_names():
     """
     Helper function to get environment-specific table names
     """
-    env = os.getenv('ENV', 'prod')
-    return f"building_{env}", f"room_{env}"
+    # Find and load the .env file
+    env_path = find_dotenv()
+    print(f"Loading .env from: {env_path}")
+    load_dotenv(env_path)
+    
+    # Get and print the environment for debugging
+    env = os.getenv('ENV')
+    print(f"Current ENV value: {env}")
+    
+    # Default to 'prod' if ENV is not set
+    if not env:
+        print("Warning: ENV not set, defaulting to 'prod'")
+        env = 'prod'
+    
+    table_names = (f"building_{env}", f"room_{env}")
+    print(f"Using table names: {table_names}")
+    
+    return table_names
 
 def create_tables():
     """
