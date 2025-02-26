@@ -1,7 +1,7 @@
 # File: API/routes.py
 import flask
 from API import app
-from API.db_setup import get_or_create_building, insert_room, create_tables
+from API.db_setup import get_or_create_building, insert_room, create_tables, get_table_names
 from API.model import get_db
 import json
 import psycopg2
@@ -26,15 +26,20 @@ def import_data():
     Expects JSON in the form of a list of objects.
     Example input: [...data...]
     """
-    ### This is jank fix it
+    ### This is jank fix it]
+    print("Creating Tables")
     create_tables()
+    
     
     conn = get_db()
     try:
         # 1) Clear existing rows in each table (use a cursor)
+        building_table, room_table = get_table_names()
+        print(building_table, room_table)
+
         with conn.cursor() as cursor:
-            cursor.execute("DELETE FROM room")
-            cursor.execute("DELETE FROM building")
+            cursor.execute(f"DELETE FROM {room_table}")
+            cursor.execute(f"DELETE FROM {building_table}")
         conn.commit()
 
         data = flask.request.get_json(force=True)

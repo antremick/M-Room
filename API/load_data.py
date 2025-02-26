@@ -150,7 +150,6 @@ class DataLoader:
             for room in classrooms:
                 bldg = room.get("BldDescrShort")
                 building_counts[bldg] = building_counts.get(bldg, 0) + 1
-            print("Rooms per building:", building_counts)
         else:
             print(f"\nProcessing {len(classrooms)} classrooms..")
         
@@ -189,7 +188,6 @@ class DataLoader:
         classrooms = self.process_classrooms(classrooms, date)
 
         print("Pushing to API")
-        print(classrooms)
         api_functions.push_to_api(self.api_url, classrooms)
 
 def main():

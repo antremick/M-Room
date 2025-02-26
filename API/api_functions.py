@@ -42,7 +42,6 @@ def get_classroom(public_key, private_key):
     next_url = f"{BASE_URL}/Classrooms"
 
     while next_url:
-        print(f"Fetching: {next_url}")
         response = requests.get(next_url, headers=auth_header)
         
         if response.ok:
@@ -53,8 +52,7 @@ def get_classroom(public_key, private_key):
                     all_classrooms.extend(classrooms)
                 
                 # Parse Link header for pagination
-                link_header = response.headers.get('Link', '')
-                print("Link header:", link_header)  # Debug print
+                link_header = response.headers.get('Link', '')  
                 
                 # Parse all links in the header
                 links = {}
@@ -67,7 +65,6 @@ def get_classroom(public_key, private_key):
                         links[rel] = url
                 
                 next_url = links.get('next')
-                print("Next URL:", next_url)  # Debug print
                 
                 print(f"Retrieved {len(classrooms)} classrooms. Total so far: {len(all_classrooms)}")
             except json.JSONDecodeError as e:

@@ -34,6 +34,7 @@ def create_tables():
     Create Building and Room tables if they don't already exist (PostgreSQL style).
     Uses environment variable TABLE_ENV to determine table names.
     """
+    print("getting table names")
     building_table, room_table = get_table_names()
 
     conn = get_db()
