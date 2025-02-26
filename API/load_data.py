@@ -1,4 +1,6 @@
 """Command line testing calls to classroom APIs"""
+
+
 import os
 from dotenv import load_dotenv
 import sys
@@ -39,27 +41,27 @@ class DataLoader:
         load_dotenv()
         return os.getenv(f"{key_name}_KEY"), os.getenv(f"{key_name}_SECRET")
 
-    def load_json_data(self, filename="buildings_import.json"):
-        """Load data from a JSON file
+    # def load_json_data(self, filename="buildings_import.json"):
+    #     """Load data from a JSON file
         
-        Args:
-            filename (str): Path to the JSON file. Defaults to 'buildings.json'
+    #     Args:
+    #         filename (str): Path to the JSON file. Defaults to 'buildings.json'
             
-        Returns:
-            dict: The loaded JSON data
-        """
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(script_dir, filename)
+    #     Returns:
+    #         dict: The loaded JSON data
+    #     """
+    #     script_dir = os.path.dirname(os.path.abspath(__file__))
+    #     file_path = os.path.join(script_dir, filename)
         
-        try:
-            with open(file_path, 'r', encoding='utf-8') as file:
-                return json.load(file)
-        except FileNotFoundError:
-            print(f"Error: {file_path} not found")
-            return None
-        except json.JSONDecodeError:
-            print(f"Error: {file_path} is not valid JSON")
-            return None
+    #     try:
+    #         with open(file_path, 'r', encoding='utf-8') as file:
+    #             return json.load(file)
+    #     except FileNotFoundError:
+    #         print(f"Error: {file_path} not found")
+    #         return None
+    #     except json.JSONDecodeError:
+    #         print(f"Error: {file_path} is not valid JSON")
+    #         return None
 
     def _get_meetings_for_room(self, room_id, date):
         """Get meetings for a specific room
@@ -99,7 +101,7 @@ class DataLoader:
      
             # If not in local file, fetch from Buildings API
         if room["BldDescrShort"] in self.short_long:
-            room["BuildingName"] = self.short_long[room["BldDescrShort"]]
+            room["long_name"] = self.short_long[room["BldDescrShort"]]
         else:
             try:
                 # Generate new token with buildings scope
@@ -142,6 +144,9 @@ class DataLoader:
         print(f"\nProcessing {len(classrooms)} classrooms..")
         
         for room in classrooms:
+            # Extract short name by removing trailing numbers
+            room["short_name"] = ''.join(c for c in room["FacilityID"] if not c.isdigit())
+
             self.buildings_api_call(room)
             room["Meetings"] = self._get_meetings_for_room(room["FacilityID"], date)
         
@@ -157,7 +162,8 @@ class DataLoader:
 
         print("Loading in Buildings")
         classrooms = api_functions.get_classroom(self.rooms_key, self.rooms_secret)
-    
+            # Extract building ID by removing trailing numbers
+
         print("Generating Rooms Token")
         self.auth_header = api_functions.generate_token(
             self.rooms_key, self.rooms_secret, "classrooms"
@@ -168,10 +174,6 @@ class DataLoader:
             self.buildings_key, self.buildings_secret, "buildings"
         )
        
-        self.building_data = self.load_json_data()
-        if self.building_data is None:
-            return
-        
         print("Parsing Classrooms")
         classrooms = self.process_classrooms(classrooms, date)
 
