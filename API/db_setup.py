@@ -5,16 +5,19 @@ from API.model import get_db
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv, find_dotenv
 
+def find_env():
+    env_path = find_dotenv()
+    print(f"Loading .env from: {env_path}")
+    load_dotenv(env_path)
+
 
 def get_table_names():
     """
     Helper function to get environment-specific table names
     """
     # Find and load the .env file
-    env_path = find_dotenv()
-    print(f"Loading .env from: {env_path}")
-    load_dotenv(env_path)
-    
+
+    find_env()
     # Get and print the environment for debugging
     env = os.getenv('ENV')
     print(f"Current ENV value: {env}")

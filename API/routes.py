@@ -1,7 +1,7 @@
 # File: API/routes.py
 import flask
 from API import app
-from API.db_setup import get_or_create_building, insert_room, create_tables, get_table_names
+from API.db_setup import get_or_create_building, insert_room, create_tables, get_table_names, find_env
 from API.model import get_db
 import json
 import psycopg2
@@ -30,7 +30,7 @@ def import_data():
     print("Creating Tables")
     create_tables()
     
-    
+
     conn = get_db()
     try:
         # 1) Clear existing rows in each table (use a cursor)
@@ -87,8 +87,10 @@ def get_buildings():
     ]
     """
     conn = get_db()
+
+    building, _ = get_table_names
     with conn.cursor() as cursor:
-        cursor.execute("SELECT id, name, short_name FROM building ORDER BY id")
+        cursor.execute(f"SELECT id, name, short_name FROM {building} ORDER BY id")
         rows = cursor.fetchall()
 
     # rows is a list of dicts if you used DictCursor
@@ -118,10 +120,11 @@ def get_rooms():
     ]
     """
     conn = get_db()
+    _, room = get_table_names()
     with conn.cursor() as cursor:
-        cursor.execute("""
+        cursor.execute(f"""
             SELECT r.id, r.roomNum, r.building_id, r.meetings
-            FROM room AS r
+            FROM {room} AS r
             ORDER BY r.id
         """)
         rows = cursor.fetchall()
