@@ -88,7 +88,7 @@ def get_buildings():
     """
     conn = get_db()
 
-    building, _ = get_table_names
+    building, _ = get_table_names()
     with conn.cursor() as cursor:
         cursor.execute(f"SELECT id, name, short_name FROM {building} ORDER BY id")
         rows = cursor.fetchall()

@@ -6,9 +6,27 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv, find_dotenv
 
 def find_env():
-    env_path = find_dotenv()
-    print(f"Loading .env from: {env_path}")
-    load_dotenv(env_path)
+    """Find and load the .env file"""
+    # Try multiple possible locations
+    possible_paths = [
+        os.path.join(os.getcwd(), '.env'),
+        os.path.join(os.getcwd(), 'API', '.env'),
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'),
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            print(f"Found .env at: {path}")
+            load_dotenv(path)
+            return
+            
+    print("Warning: No .env file found in any expected location")
+    
+    # Print all environment variables for debugging
+    print("\nCurrent environment variables:")
+    for key, value in os.environ.items():
+        if key in ['ENV', 'DATABASE_URL']:
+            print(f"{key}: {value}")
 
 
 def get_table_names():
