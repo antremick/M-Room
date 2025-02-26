@@ -8,7 +8,7 @@ VENV = env
 # Flask application directory
 APP_DIR = Flask
 
-HOST ?= mroom-api-c7aef75a74b0.herokuapp.com
+HOST ?= mroom-staging-031597615ed8.herokuapp.com
 
 # Deploy to Heroku
 heroku:
