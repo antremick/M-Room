@@ -3,8 +3,12 @@ import os
 from dotenv import load_dotenv
 import sys
 import json
+import Flask
 # Add the project root directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Now import from the API package
+from API import app
 
 # Now import api_functions
 import Flask.API.api_functions as api_functions
@@ -62,8 +66,8 @@ pprint(ross_rooms)
 # }
 
 dates = {
-    "startDate": "1-27-2025",
-    "endDate": "1-27-2025"
+    "startDate": "3-12-2025",
+    "endDate": "3-12-2025"
 }
 authHeader = api_functions.generate_token(publicKey, privateKey, "classrooms")
 # for room in blau_rooms:
@@ -74,12 +78,12 @@ authHeader = api_functions.generate_token(publicKey, privateKey, "classrooms")
 #         room["Meetings"] = [with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
 
 
-for room in blau_rooms:
+for room in ross_rooms:
     classroomID = room["FacilityID"]
     meetings = api_functions.get_data_from_endpoint(endpoints[4], classroomID, authHeader, dates)
     room["Meetings"] = [with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
 
-pprint(blau_rooms)
+pprint(ross_rooms)
 
 
 # import requests
