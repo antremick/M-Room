@@ -6,13 +6,16 @@ PYTHON = python3
 # Virtual environment directory
 VENV = env
 # Flask application directory
-APP_DIR = FlaskAPI
+APP_DIR = Flask
 
-HOST ?= mroom-api-c7aef75a74b0.herokuapp.com
+HOST ?= mroom-staging-031597615ed8.herokuapp.com
 
 # Deploy to Heroku
 heroku:
 	git subtree push --prefix $(APP_DIR) heroku main
+
+staging:
+	git subtree push --prefix $(APP_DIR) staging main
 
 # Quick git commands
 git:
@@ -45,6 +48,9 @@ ios:
 
 buildings:
 	curl -v -X GET http://${HOST}/buildings || true
+
+rooms:
+	curl -v -X GET http://${HOST}/rooms || true
 
 logs-heroku:
 	heroku logs --app mroom-api --tail --source app
