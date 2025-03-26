@@ -5,8 +5,8 @@ from API.db_setup import get_or_create_building, insert_room, create_tables, get
 from API.model import get_db
 import json
 import psycopg2
+import jwt  # PyJWT package
 from werkzeug.security import generate_password_hash, check_password_hash
-from jwt import encode, decode  # More specific import
 from functools import wraps
 import datetime
 from flask import request, jsonify
@@ -152,7 +152,7 @@ def token_required(f):
             return jsonify({'message': 'Token is missing'}), 401
         
         try:
-            data = decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
             conn = get_db()
             with conn.cursor() as cur:
                 cur.execute("SELECT * FROM users WHERE id = %s", (data['user_id'],))

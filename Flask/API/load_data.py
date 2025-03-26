@@ -9,8 +9,26 @@ import re
 # Add the project root directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Print diagnostic info
+print("Python version:", sys.version)
+print("Current directory:", os.getcwd())
+print("Files in current directory:", os.listdir("."))
+print("Python path:", sys.path)
+
+try:
+    import requests
+    print("Successfully imported requests:", requests.__version__)
+except ImportError as e:
+    print("Error importing requests:", str(e))
+    print("Attempting to install...")
+    os.system("pip install requests")
+    try:
+        import requests
+        print("Successfully installed and imported requests:", requests.__version__)
+    except ImportError as e2:
+        print("Still can't import requests after install:", str(e2))
+
 import api_functions
-import requests
 import argparse
 
 class DataLoader:

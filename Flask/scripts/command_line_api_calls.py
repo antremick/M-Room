@@ -5,17 +5,18 @@ import sys
 import json
 # Add the project root directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+from API import app
 # Now import api_functions
-import Flask.API.api_functions as api_functions
+import API.api_functions as api_functions
 from pprint import pprint 
 import requests
 
 
 load_dotenv()
 
-publicKey = os.getenv("PUBLIC_KEY")
-privateKey = os.getenv("PRIVATE_KEY")
+publicKey = os.getenv("ROOMS_KEY")
+privateKey = os.getenv("ROOMS_SECRET")
+
 
 
 endpoints = [
@@ -54,7 +55,7 @@ def with_keys(my_dict, keep):
 blau_rooms = [without_keys(room, ["BuildingID", "CampusCd", "CampusDescr"]) for room in classrooms if room["BldDescrShort"] == BLAU_CODE]
 ross_rooms = [without_keys(room, ["BuildingID", "CampusCd", "CampusDescr"])  for room in classrooms if room["BldDescrShort"] == ROSS_CODE]
 
-pprint(ross_rooms)
+pprint(blau_rooms)
 
 # dates = {
 #     "startDate": "11-15-2023",
@@ -62,8 +63,8 @@ pprint(ross_rooms)
 # }
 
 dates = {
-    "startDate": "1-27-2025",
-    "endDate": "1-27-2025"
+    "startDate": "3-25-2025",
+    "endDate": "3-25-2025"
 }
 authHeader = api_functions.generate_token(publicKey, privateKey, "classrooms")
 # for room in blau_rooms:

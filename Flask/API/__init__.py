@@ -1,7 +1,7 @@
 # API/__init__.py
 import flask
 
-app = flask.Flask(__name__)     # The central Flask app
+app = flask.Flask(__name__)     # The central Flask appsk app
 
 # Load configuration if needed:
 # app.config['SECRET_KEY'] = 'replace_with_real_secret'

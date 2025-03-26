@@ -10,6 +10,9 @@ APP_DIR = Flask
 
 HOST ?= mroom-staging-031597615ed8.herokuapp.com
 
+# Add near the top with other variables
+VENV_PATH = ~/venvs/mroom
+
 # Deploy to Heroku
 heroku:
 	git subtree push --prefix $(APP_DIR) heroku main
@@ -55,6 +58,9 @@ rooms:
 logs-heroku:
 	heroku logs --app mroom-api --tail --source app
 
+logs-staging:
+	heroku logs --app mroom-staging --tail --source app
+
 shell-heroku:
 	heroku run bash --app mroom-api
 
@@ -79,3 +85,7 @@ upload-building:
 		-H "Content-Type: application/json" \
 		-H "Accept: application/json" \
 		-d '{"name": "Test Building", "short_name": "TEST"}'
+
+# Update the env target
+env:
+	source $(VENV_PATH)/bin/activate
