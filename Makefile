@@ -89,3 +89,18 @@ upload-building:
 # Update the env target
 env:
 	source $(VENV_PATH)/bin/activate
+
+load-data-staging:
+	heroku run python API/load_data.py --app mroom-staging
+
+# Add a new command to load data into production
+load-data-prod:
+	heroku run python API/load_data.py --app mroom-api
+
+# Add a Heroku rebuild command
+heroku-rebuild:
+	heroku buildpacks:clear --app mroom-staging
+	heroku buildpacks:set heroku/python --app mroom-staging
+	git commit --allow-empty -m "Trigger Heroku rebuild"
+	git push heroku main
+
