@@ -13,5 +13,6 @@ SQLAlchemy==2.0.36
 PyJWT==2.6.0
 python-dotenv==0.19.0
 
+requests==2.31.0
 # Only keep the essential dependencies needed for the Flask app
 # Remove unnecessary packages like Django, awscli, etc.
