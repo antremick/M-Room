@@ -97,10 +97,13 @@ load-data-staging:
 load-data-prod:
 	heroku run python API/load_data.py --app mroom-api
 
-# Add a Heroku rebuild command
-heroku-rebuild:
+heroku-restart:
+	heroku restart --app mroom-staging
+
+heroku-rebuild-python:
 	heroku buildpacks:clear --app mroom-staging
 	heroku buildpacks:set heroku/python --app mroom-staging
-	git commit --allow-empty -m "Trigger Heroku rebuild"
-	git push heroku main
+	heroku config:set PYTHON_VERSION=3.12.0 --app mroom-staging
+	git commit --allow-empty -m "Force rebuild with Python 3.12"
+	git push staging main
 
