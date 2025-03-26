@@ -6,12 +6,15 @@ Werkzeug==2.2.3
 gunicorn==20.1.0
 
 # Database
-psycopg2==2.9.10
+psycopg2-binary==2.9.9
 SQLAlchemy==2.0.36
 
 # Auth and Security
 PyJWT==2.6.0
-python-dotenv==0.19.0
+python-dotenv==1.0.0
+
+# Network
+requests==2.31.0
 
 # Only keep the essential dependencies needed for the Flask app
 # Remove unnecessary packages like Django, awscli, etc.
