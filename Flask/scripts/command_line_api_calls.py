@@ -31,6 +31,9 @@ endpoints = [
 classrooms = api_functions.get_classroom(publicKey, privateKey)
 ROSS_CODE = 'ROSS BUS'
 BLAU_CODE = 'BLAU HALL'
+ROB_CODE = 'FMC ROBOTC'
+FXB_CODE = "FXB"
+
 with open('classrooms.json', 'w') as json_file:
     json.dump(classrooms, json_file)
 
@@ -54,8 +57,10 @@ def with_keys(my_dict, keep):
 # remove buildingid, campus code, and campus description keys 
 blau_rooms = [without_keys(room, ["BuildingID", "CampusCd", "CampusDescr"]) for room in classrooms if room["BldDescrShort"] == BLAU_CODE]
 ross_rooms = [without_keys(room, ["BuildingID", "CampusCd", "CampusDescr"])  for room in classrooms if room["BldDescrShort"] == ROSS_CODE]
+rob_rooms = [without_keys(room, ["BuildingID", "CampusCd", "CampusDescr"])  for room in classrooms if room["BldDescrShort"] == ROB_CODE]
+fxb_rooms = [without_keys(room, ["BuildingID", "CampusCd", "CampusDescr"])  for room in classrooms if room["BldDescrShort"] == FXB_CODE]
 
-pprint(blau_rooms)
+# pprint(blau_rooms)
 
 # dates = {
 #     "startDate": "11-15-2023",
@@ -63,8 +68,8 @@ pprint(blau_rooms)
 # }
 
 dates = {
-    "startDate": "3-25-2025",
-    "endDate": "3-25-2025"
+    "startDate": "3-26-2025",
+    "endDate": "3-26-2025"
 }
 authHeader = api_functions.generate_token(publicKey, privateKey, "classrooms")
 # for room in blau_rooms:
@@ -75,12 +80,12 @@ authHeader = api_functions.generate_token(publicKey, privateKey, "classrooms")
 #         room["Meetings"] = [with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
 
 
-for room in blau_rooms:
+for room in fxb_rooms:
     classroomID = room["FacilityID"]
     meetings = api_functions.get_data_from_endpoint(endpoints[4], classroomID, authHeader, dates)
     room["Meetings"] = [with_keys(meeting, ["MtgDate", "MtgStartTime", "MtgEndTime"]) for meeting in meetings]
 
-pprint(blau_rooms)
+pprint(fxb_rooms)
 
 
 # import requests
